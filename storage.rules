@@ -1,0 +1,50 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isValidFileType() {
+      // Allow JPG, PNG, HEIC, and PDF
+      return request.resource.contentType.matches('image/jpeg') ||
+             request.resource.contentType.matches('image/png') ||
+             request.resource.contentType.matches('image/heic') ||
+             request.resource.contentType.matches('application/pdf');
+    }
+    
+    function isValidFileSize() {
+      // Max 5MB (5 * 1024 * 1024 bytes)
+      return request.resource.size <= 5 * 1024 * 1024;
+    }
+    
+    // Receipts storage rules
+    match /receipts/{userId}/{fileName} {
+      // Users can upload their own receipts
+      allow create: if isOwner(userId) &&
+                       isValidFileType() &&
+                       isValidFileSize();
+      
+      // Users can read their own receipts
+      allow read: if isOwner(userId);
+      
+      // Users cannot update receipts
+      allow update: if false;
+      
+      // Users cannot delete receipts
+      allow delete: if false;
+      
+      // Admins can read all receipts (for verification)
+      allow read: if isAuthenticated() &&
+                     exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+                     get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+  }
+}

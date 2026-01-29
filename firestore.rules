@@ -1,0 +1,55 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Users collection rules
+    match /users/{userId} {
+      // Anyone authenticated can read any user document (needed for house number validation)
+      allow read: if isAuthenticated();
+      
+      // Anyone authenticated can list users (needed for queries)
+      allow list: if isAuthenticated();
+      
+      // Only the owner can create their own user document (onboarding)
+      allow create: if isOwner(userId) && request.resource.data.uid == request.auth.uid;
+      
+      // Admins can update user documents (for role changes)
+      allow update: if isAdmin();
+      
+      // No one can delete users
+      allow delete: if false;
+    }
+    
+    // Payments collection rules
+    match /payments/{paymentId} {
+      // Users can read their own payments, admins can read all
+      allow read: if isAuthenticated() && 
+                     (resource.data.userId == request.auth.uid || isAdmin());
+      
+      // Users can create payments
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      
+      // Only admins can update payments
+      allow update: if isAdmin();
+      
+      // No one can delete payments
+      allow delete: if false;
+    }
+  }
+}

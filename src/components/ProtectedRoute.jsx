@@ -1,0 +1,23 @@
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+
+export const ProtectedRoute = ({ children, requireOnboarding = true, adminOnly = false }) => {
+  const { currentUser, userData } = useAuth();
+
+  // Not authenticated
+  if (!currentUser) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Needs onboarding
+  if (requireOnboarding && !userData) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  // Admin only route
+  if (adminOnly && userData?.role !== 'admin') {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
+};

@@ -41,10 +41,8 @@ service firebase.storage {
       // Users cannot delete receipts
       allow delete: if false;
       
-      // Admins can read all receipts (for verification)
-      allow read: if isAuthenticated() &&
-                     exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-                     get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      // Admins: use frontend logic to fetch receipts (avoid reads in rules)
+      // This saves quota by not reading user documents in rules
     }
   }
 }

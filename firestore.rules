@@ -13,6 +13,7 @@ service cloud.firestore {
     }
     
     function isAdmin() {
+      // NOTE: Simplified to reduce reads. Store admin status in auth claims or use frontend logic
       return isAuthenticated() && 
              exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';

@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Onboarding from './pages/Onboarding';
 import ResidentDashboard from './pages/ResidentDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminFinancialReport from './pages/AdminFinancialReport';
 
 function AppRoutes() {
   const { currentUser, userData, loading } = useAuth();
@@ -61,6 +62,16 @@ function AppRoutes() {
         element={
           <ProtectedRoute adminOnly>
             <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Admin financial report */}
+      <Route
+        path="/admin/financial-report"
+        element={
+          <ProtectedRoute adminOnly>
+            <AdminFinancialReport />
           </ProtectedRoute>
         }
       />

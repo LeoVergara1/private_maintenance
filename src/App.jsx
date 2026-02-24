@@ -66,11 +66,11 @@ function AppRoutes() {
         }
       />
 
-      {/* Admin financial report */}
+      {/* Financial report */}
       <Route
-        path="/admin/financial-report"
+        path="/financial-report"
         element={
-          <ProtectedRoute adminOnly>
+          <ProtectedRoute>
             <AdminFinancialReport />
           </ProtectedRoute>
         }

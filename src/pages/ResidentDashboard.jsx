@@ -194,12 +194,20 @@ export default function ResidentDashboard() {
               <h1 className="text-2xl font-bold text-gray-900">Panel de Residente</h1>
               <p className="text-sm text-gray-600">Casa {userData?.houseNumber}</p>
             </div>
-            <button
-              onClick={handleSignOut}
-              className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              Cerrar Sesión
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => navigate('/financial-report')}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                Ver Desglose
+              </button>
+              <button
+                onClick={handleSignOut}
+                className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                Cerrar Sesión
+              </button>
+            </div>
           </div>
         </div>
       </header>

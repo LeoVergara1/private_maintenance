@@ -13,7 +13,9 @@ import {
   getMonthName 
 } from '../utils/dateValidation';
 import { validateFile } from '../utils/fileValidation';
+import { generateReceiptNumber } from '../utils/receiptGenerator';
 import ReceiptModal from '../components/ReceiptModal';
+import PaymentConfirmationModal from '../components/PaymentConfirmationModal';
 import { useNavigate } from 'react-router-dom';
 
 export default function ResidentDashboard() {
@@ -28,6 +30,7 @@ export default function ResidentDashboard() {
   const [loadingPayments, setLoadingPayments] = useState(true);
   const [hasPaidThisMonth, setHasPaidThisMonth] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState(null);
+  const [confirmationData, setConfirmationData] = useState(null);
 
   const currentMonth = getCurrentMonth();
   const currentYear = getCurrentYear();
@@ -101,22 +104,37 @@ export default function ResidentDashboard() {
       // Upload receipt
       const receiptUrl = await uploadReceipt(selectedFile, currentUser.uid, currentMonth, currentYear);
 
+      // Generate receipt number
+      const receiptNumber = generateReceiptNumber();
+
       // Create payment record
-      await createPayment({
+      const paymentResult = await createPayment({
         userId: currentUser.uid,
         houseNumber: userData.houseNumber,
         amount: parseFloat(amount),
         receiptUrl,
         month: currentMonth,
         year: currentYear,
-        isLate
+        isLate,
+        receiptNumber
       });
 
       setSuccess('Pago registrado exitosamente');
       setSelectedFile(null);
       setAmount(300);
       
-      // Reload payments
+      // Show confirmation modal
+      setConfirmationData({
+        houseNumber: userData.houseNumber,
+        amount: parseFloat(amount),
+        month: currentMonth,
+        year: currentYear,
+        isLate,
+        receiptNumber,
+        createdAt: new Date()
+      });
+
+      // Reload payments (without delay - verification now always reads fresh from Firestore)
       await loadPayments();
       await checkCurrentMonthPayment();
 
@@ -158,6 +176,12 @@ export default function ResidentDashboard() {
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
     }
+  };
+
+  const handleConfirmationModalClose = async () => {
+    // Verify again when closing the confirmation modal
+    await checkCurrentMonthPayment();
+    setConfirmationData(null);
   };
 
   return (
@@ -351,6 +375,13 @@ export default function ResidentDashboard() {
         onClose={() => setSelectedReceipt(null)}
         receiptUrl={selectedReceipt?.url}
         fileName={selectedReceipt?.fileName}
+      />
+
+      {/* Payment Confirmation Modal */}
+      <PaymentConfirmationModal
+        isOpen={!!confirmationData}
+        onClose={handleConfirmationModalClose}
+        paymentData={confirmationData}
       />
     </div>
   );

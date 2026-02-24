@@ -7,6 +7,7 @@ import { exportPaymentsToExcel } from '../utils/excelExport';
 import PaymentStatusModal from '../components/PaymentStatusModal';
 import ReceiptModal from '../components/ReceiptModal';
 import UnpaidHousesPanel from '../components/UnpaidHousesPanel';
+import ExpensesPanel from '../components/ExpensesPanel';
 
 export default function AdminDashboard() {
   const { signOut } = useAuth();
@@ -177,6 +178,9 @@ export default function AdminDashboard() {
 
         {/* Unpaid Houses Panel */}
         <UnpaidHousesPanel />
+
+        {/* Expenses Panel */}
+        <ExpensesPanel />
 
         {/* Filters and Export */}
         <div className="bg-white rounded-lg shadow-md p-6">

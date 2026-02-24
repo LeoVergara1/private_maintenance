@@ -16,15 +16,11 @@ import { getCachedData, setCachedData, clearCache } from '../utils/cacheManager'
 
 /**
  * Check if payment already exists for user in specific month/year
- * Uses cache to minimize Firestore reads
+ * IMPORTANT: Does NOT use cache - always reads fresh from Firestore
+ * This is critical for accurate payment status
  */
 export const checkDuplicatePayment = async (userId, month, year) => {
   try {
-    // Check cache first
-    const cacheKey = `payment_${userId}_${month}_${year}`;
-    const cached = getCachedData(cacheKey);
-    if (cached !== null) return cached;
-
     const q = query(
       collection(db, 'payments'),
       where('userId', '==', userId),
@@ -35,9 +31,6 @@ export const checkDuplicatePayment = async (userId, month, year) => {
     
     const snapshot = await getDocs(q);
     const exists = !snapshot.empty;
-
-    // Cache result for 30 minutes
-    setCachedData(cacheKey, exists);
 
     return exists;
   } catch (error) {
@@ -68,6 +61,7 @@ export const uploadReceipt = async (file, userId, month, year) => {
 
 /**
  * Create new payment
+ * Note: No need to clear cache since we're not caching critical data anymore
  */
 export const createPayment = async (paymentData) => {
   try {
@@ -79,6 +73,7 @@ export const createPayment = async (paymentData) => {
     };
     
     const docRef = await addDoc(collection(db, 'payments'), payment);
+    
     return { id: docRef.id, ...payment };
   } catch (error) {
     console.error('Error al crear pago:', error);
@@ -88,15 +83,11 @@ export const createPayment = async (paymentData) => {
 
 /**
  * Get payments by user ID and year
- * Uses cache to minimize reads
+ * IMPORTANT: Does NOT use cache - always reads fresh from Firestore
+ * This ensures payment history is always current
  */
 export const getPaymentsByYear = async (userId, year) => {
   try {
-    // Check cache first
-    const cacheKey = `payments_${userId}_${year}`;
-    const cached = getCachedData(cacheKey);
-    if (cached) return cached;
-
     const q = query(
       collection(db, 'payments'),
       where('userId', '==', userId),
@@ -113,9 +104,6 @@ export const getPaymentsByYear = async (userId, year) => {
       updatedAt: doc.data().updatedAt?.toDate()
     }));
 
-    // Cache results
-    setCachedData(cacheKey, payments);
-
     return payments;
   } catch (error) {
     console.error('Error al obtener pagos:', error);
@@ -125,15 +113,10 @@ export const getPaymentsByYear = async (userId, year) => {
 
 /**
  * Get all payments for admin (filtered by year)
- * Minimal reads with caching
+ * IMPORTANT: Does NOT use cache - always reads fresh from Firestore
  */
 export const getAllPaymentsByYear = async (year) => {
   try {
-    // Check cache (shorter duration for admin data)
-    const cacheKey = `admin_payments_${year}`;
-    const cached = getCachedData(cacheKey);
-    if (cached) return cached;
-
     const q = query(
       collection(db, 'payments'),
       where('year', '==', year),
@@ -148,9 +131,6 @@ export const getAllPaymentsByYear = async (year) => {
       createdAt: doc.data().createdAt?.toDate(),
       updatedAt: doc.data().updatedAt?.toDate()
     }));
-
-    // Cache results
-    setCachedData(cacheKey, payments);
 
     return payments;
   } catch (error) {

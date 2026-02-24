@@ -3,10 +3,12 @@ import { isImageFile, isPdfFile } from '../utils/fileValidation';
 
 export default function ReceiptModal({ isOpen, onClose, receiptUrl, fileName }) {
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setIsLoading(true);
+      setLoadError(false);
     }
   }, [isOpen, receiptUrl]);
 
@@ -18,10 +20,29 @@ export default function ReceiptModal({ isOpen, onClose, receiptUrl, fileName }) 
 
   const handleImageLoad = () => {
     setIsLoading(false);
+    setLoadError(false);
   };
 
-  const isImage = fileName ? isImageFile(fileName) : receiptUrl.match(/\.(jpg|jpeg|png|heic)$/i);
-  const isPdf = fileName ? isPdfFile(fileName) : receiptUrl.match(/\.pdf$/i);
+  const handleImageError = () => {
+    setIsLoading(false);
+    setLoadError(true);
+  };
+
+  // Extract file extension from URL (handle Firebase Storage URLs with parameters)
+  const getFileExtension = (url) => {
+    if (!url) return '';
+    // Remove query parameters
+    const cleanUrl = url.split('?')[0];
+    const match = cleanUrl.match(/\.([^/.]+)$/);
+    return match ? match[1].toLowerCase() : '';
+  };
+
+  const fileExtension = fileName 
+    ? fileName.split('.').pop().toLowerCase()
+    : getFileExtension(receiptUrl);
+
+  const isImage = ['jpg', 'jpeg', 'png', 'heic', 'webp', 'gif'].includes(fileExtension);
+  const isPdf = fileExtension === 'pdf';
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -59,20 +80,33 @@ export default function ReceiptModal({ isOpen, onClose, receiptUrl, fileName }) 
 
           {/* Content */}
           <div className="p-4 overflow-auto max-h-[calc(90vh-80px)]">
-            {isLoading && (
+            {isLoading && !loadError && (
               <div className="flex items-center justify-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
               </div>
             )}
 
             {isImage && (
-              <img
-                src={receiptUrl}
-                alt="Comprobante"
-                className="w-full h-auto rounded-lg"
-                onLoad={handleImageLoad}
-                onError={() => setIsLoading(false)}
-              />
+              <>
+                <img
+                  src={receiptUrl}
+                  alt="Comprobante"
+                  className="w-full h-auto rounded-lg"
+                  onLoad={handleImageLoad}
+                  onError={handleImageError}
+                />
+                {loadError && (
+                  <div className="mt-4 text-center">
+                    <p className="text-red-600 mb-4">No se pudo cargar la imagen directamente.</p>
+                    <button
+                      onClick={handleDownload}
+                      className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                    >
+                      Descargar Imagen
+                    </button>
+                  </div>
+                )}
+              </>
             )}
 
             {isPdf && (
@@ -80,6 +114,7 @@ export default function ReceiptModal({ isOpen, onClose, receiptUrl, fileName }) 
                 src={receiptUrl}
                 className="w-full h-[70vh] rounded-lg"
                 onLoad={handleImageLoad}
+                onError={handleImageError}
                 title="PDF Comprobante"
               />
             )}

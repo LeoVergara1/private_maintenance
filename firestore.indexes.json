@@ -2,7 +2,7 @@
   "indexes": [
     {
       "collectionGroup": "expenses",
-      "queryScope": "Collection",
+      "queryScope": "COLLECTION",
       "fields": [
         {
           "fieldPath": "year",
@@ -16,7 +16,7 @@
     },
     {
       "collectionGroup": "expenses",
-      "queryScope": "Collection",
+      "queryScope": "COLLECTION",
       "fields": [
         {
           "fieldPath": "month",

@@ -36,12 +36,13 @@ export const createExpense = async (expenseData) => {
 
 /**
  * Upload receipt/evidence file to Firebase Storage
+ * Uses expenseId as the folder path
  */
-export const uploadExpenseReceipt = async (file, timestamp) => {
+export const uploadExpenseReceipt = async (file, expenseId) => {
   try {
     const fileExtension = file.name.split('.').pop();
-    const fileName = `${timestamp}.${fileExtension}`;
-    const storageRef = ref(storage, `expenses/${timestamp}/${fileName}`);
+    const fileName = `${Date.now()}.${fileExtension}`;
+    const storageRef = ref(storage, `expenses/${expenseId}/${fileName}`);
     
     await uploadBytes(storageRef, file);
     const downloadURL = await getDownloadURL(storageRef);

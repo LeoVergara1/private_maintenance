@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { createExpense, uploadExpenseReceipt, deleteExpense, getExpensesByYear } from '../services/expensesService';
+import { createExpense, uploadExpenseReceipt, deleteExpense, getExpensesByYear, updateExpense } from '../services/expensesService';
 import { getCurrentMonth, getCurrentYear, getMonthName } from '../utils/dateValidation';
 import { validateFile } from '../utils/fileValidation';
 
@@ -57,19 +57,23 @@ export default function ExpensesPanel() {
     try {
       setSubmitting(true);
 
-      // Upload receipt
-      const timestamp = Date.now();
-      const receiptUrl = await uploadExpenseReceipt(selectedFile, timestamp);
-
-      // Create expense
-      await createExpense({
+      // Create expense record first to get the ID
+      const expenseData = {
         description: description.trim(),
         amount: parseFloat(amount),
         month: parseInt(selectedMonth),
         year: parseInt(selectedYear),
-        receiptUrl,
+        receiptUrl: '',
         createdAt: new Date()
-      });
+      };
+
+      const expense = await createExpense(expenseData);
+
+      // Upload receipt using the expense ID
+      const receiptUrl = await uploadExpenseReceipt(selectedFile, expense.id);
+
+      // Update expense with receipt URL
+      await updateExpense(expense.id, { receiptUrl });
 
       setSuccess('Gasto registrado exitosamente');
       setDescription('');

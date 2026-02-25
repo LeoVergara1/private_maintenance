@@ -24,6 +24,10 @@ service firebase.storage {
       // Max 5MB (5 * 1024 * 1024 bytes)
       return request.resource.size <= 5 * 1024 * 1024;
     }
+
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.admin == true;
+    }
     
     // Receipts storage rules
     match /receipts/{userId}/{fileName} {
@@ -43,6 +47,24 @@ service firebase.storage {
       
       // Admins: use frontend logic to fetch receipts (avoid reads in rules)
       // This saves quota by not reading user documents in rules
+    }
+
+    // Expenses storage rules (admin only)
+    match /expenses/{expenseId}/{fileName} {
+      // Only authenticated admin users can upload expense receipts
+      allow create: if isAuthenticated() &&
+                       isAdmin() &&
+                       isValidFileType() &&
+                       isValidFileSize();
+      
+      // All authenticated users can read expense receipts
+      allow read: if isAuthenticated();
+      
+      // Only admin can delete expense receipts
+      allow delete: if isAdmin();
+      
+      // Expenses cannot be updated
+      allow update: if false;
     }
   }
 }

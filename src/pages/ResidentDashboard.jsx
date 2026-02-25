@@ -39,6 +39,12 @@ export default function ResidentDashboard() {
   useEffect(() => {
     loadPayments();
     checkCurrentMonthPayment();
+    // Set default amount based on whether payment is late
+    if (isLate) {
+      setAmount(315);
+    } else {
+      setAmount(300);
+    }
   }, []);
 
   const loadPayments = async () => {
@@ -279,7 +285,7 @@ export default function ResidentDashboard() {
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
                 <p className="mt-1 text-xs text-gray-500">
-                  Monto base: $300. Puede variar si hay pago tardío.
+                  {isLate ? 'Monto por pago tardío: $315' : 'Monto base: $300'}
                 </p>
               </div>
 

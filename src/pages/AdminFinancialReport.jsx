@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getAllPaymentsByYear } from '../services/paymentService';
+import { getExpensesByMonth } from '../services/expensesService';
 import { getAllUsers } from '../services/userService';
 import { getCurrentYear, getMonthName } from '../utils/dateValidation';
 
@@ -13,12 +14,13 @@ export default function AdminFinancialReport() {
   const [monthlyReport, setMonthlyReport] = useState({});
   const [allHouses, setAllHouses] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [monthExpenses, setMonthExpenses] = useState([]);
 
   const currentYear = getCurrentYear();
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [selectedMonth]);
 
   const loadData = async () => {
     try {
@@ -32,6 +34,10 @@ export default function AdminFinancialReport() {
       const users = await getAllUsers();
       const residents = users.filter(u => u.role === 'resident');
       setAllHouses(residents);
+
+      // Get expenses for selected month
+      const expenses = await getExpensesByMonth(selectedMonth, currentYear);
+      setMonthExpenses(expenses);
 
       // Generate report
       generateReport(payments, residents);
@@ -92,6 +98,13 @@ export default function AdminFinancialReport() {
     });
 
     setMonthlyReport(report);
+  };
+
+  const formatCurrency = (amount) => {
+    return amount.toLocaleString('es-MX', { 
+      minimumFractionDigits: 2, 
+      maximumFractionDigits: 2 
+    });
   };
 
   const handleSignOut = async () => {
@@ -171,11 +184,11 @@ export default function AdminFinancialReport() {
 
         {/* Summary Cards */}
         {monthlyReport[selectedMonth] && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
             <div className="bg-white rounded-lg shadow p-6">
               <p className="text-sm font-medium text-gray-600">Total Recaudado</p>
               <p className="text-3xl font-bold text-gray-900 mt-2">
-                ${monthlyReport[selectedMonth].totalCollected.toFixed(2)}
+                ${formatCurrency(monthlyReport[selectedMonth].totalCollected)}
               </p>
             </div>
 
@@ -199,6 +212,78 @@ export default function AdminFinancialReport() {
                 {allHouses.length}
               </p>
             </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <p className="text-sm font-medium text-gray-600">Total Gastos</p>
+              <p className="text-3xl font-bold text-red-600 mt-2">
+                ${formatCurrency(monthExpenses.reduce((sum, exp) => sum + exp.amount, 0))}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Expenses Section */}
+        {monthlyReport[selectedMonth] && (
+          <div className="mb-8 bg-white rounded-lg shadow overflow-hidden">
+            {/* Expenses Header */}
+            <div className="bg-gradient-to-r from-red-500 to-red-600 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-white">Gastos del Mes</h2>
+                  <p className="text-red-50 text-sm">Total: ${formatCurrency(monthExpenses.reduce((sum, exp) => sum + exp.amount, 0))}</p>
+                </div>
+                <div>
+                  <p className="text-red-50 text-sm">Registros: {monthExpenses.length}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Expenses Content */}
+            <div className="p-6">
+              {monthExpenses.length === 0 ? (
+                <p className="text-gray-500 text-center py-4">No hay gastos registrados para este mes</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left px-4 py-2 bg-gray-50 font-medium text-gray-700">Fecha</th>
+                        <th className="text-left px-4 py-2 bg-gray-50 font-medium text-gray-700">Descripción</th>
+                        <th className="text-right px-4 py-2 bg-gray-50 font-medium text-gray-700">Monto</th>
+                        <th className="text-center px-4 py-2 bg-gray-50 font-medium text-gray-700">Comprobante</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {monthExpenses.map((expense, idx) => {
+                        const createdDate = new Date(expense.createdAt?.seconds ? expense.createdAt.seconds * 1000 : expense.createdAt);
+                        return (
+                          <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50">
+                            <td className="px-4 py-3 text-sm text-gray-600">{createdDate.toLocaleDateString('es-MX')}</td>
+                            <td className="px-4 py-3 font-medium text-gray-900">{expense.description}</td>
+                            <td className="px-4 py-3 text-sm font-bold text-red-600 text-right">${formatCurrency(expense.amount)}</td>
+                            <td className="px-4 py-3 text-center">
+                              {expense.receiptUrl && (
+                                <a
+                                  href={expense.receiptUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
+                                  title="Ver comprobante"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                  </svg>
+                                </a>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -211,7 +296,7 @@ export default function AdminFinancialReport() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-xl font-bold text-white">{monthlyReport[selectedMonth].monthName} {currentYear}</h2>
-                    <p className="text-blue-50 text-sm">Total recaudado: ${monthlyReport[selectedMonth].totalCollected.toFixed(2)}</p>
+                    <p className="text-blue-50 text-sm">Total recaudado: ${formatCurrency(monthlyReport[selectedMonth].totalCollected)}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-blue-50 text-sm">A tiempo: {monthlyReport[selectedMonth].onTimePayments}</p>
@@ -248,7 +333,7 @@ export default function AdminFinancialReport() {
                           {monthlyReport[selectedMonth].paid.map((payment, idx) => (
                             <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50">
                               <td className="px-4 py-3 font-medium text-gray-900">#{payment.houseNumber}</td>
-                              <td className="px-4 py-3 text-gray-700">${payment.amount.toFixed(2)}</td>
+                              <td className="px-4 py-3 text-gray-700">${formatCurrency(payment.amount)}</td>
                               <td className="px-4 py-3">
                                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                                   payment.status === 'approved' ? 'bg-green-100 text-green-800' :

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { createExpense, uploadExpenseReceipt, deleteExpense, getExpensesByYear, updateExpense } from '../services/expensesService';
 import { getCurrentMonth, getCurrentYear, getMonthName } from '../utils/dateValidation';
@@ -21,6 +21,11 @@ export default function ExpensesPanel() {
   const [submitting, setSubmitting] = useState(false);
 
   const currentYear = getCurrentYear();
+
+  // Load expenses on component mount
+  useEffect(() => {
+    loadExpenses();
+  }, []);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -64,9 +69,6 @@ export default function ExpensesPanel() {
         throw new Error('Usuario no autenticado');
       }
 
-      console.log('Usuario autenticado:', currentUser.uid);
-      console.log('Archivo a subir:', selectedFile.name, selectedFile.size, selectedFile.type);
-
       // Create expense record first to get the ID
       const expenseData = {
         description: description.trim(),
@@ -77,14 +79,10 @@ export default function ExpensesPanel() {
         createdAt: new Date()
       };
 
-      console.log('Creando documento de gasto...');
       const expense = await createExpense(expenseData);
-      console.log('Gasto creado con ID:', expense.id);
 
       // Upload receipt using the expense ID
-      console.log('Subiendo archivo a expenses/' + expense.id + '/...');
       const receiptUrl = await uploadExpenseReceipt(selectedFile, expense.id);
-      console.log('Archivo subido:', receiptUrl);
 
       // Update expense with receipt URL
       await updateExpense(expense.id, { receiptUrl });
@@ -103,10 +101,7 @@ export default function ExpensesPanel() {
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      console.error('Error completo:', err);
-      console.error('Mensaje:', err.message);
-      console.error('Código:', err.code);
-      console.error('Detalles:', err);
+      console.error('Error al registrar el gasto:', err);
       setError(`Error al registrar el gasto: ${err.message}`);
     } finally {
       setSubmitting(false);
@@ -148,6 +143,13 @@ export default function ExpensesPanel() {
     return expenses
       .filter(exp => exp.month === month && exp.year === currentYear)
       .reduce((sum, exp) => sum + exp.amount, 0);
+  };
+
+  const formatCurrency = (amount) => {
+    return amount.toLocaleString('es-MX', { 
+      minimumFractionDigits: 2, 
+      maximumFractionDigits: 2 
+    });
   };
 
   return (
@@ -299,7 +301,7 @@ export default function ExpensesPanel() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
           <p className="text-sm text-gray-600 mb-1">Total Gastos {currentYear}</p>
-          <p className="text-2xl font-bold text-blue-600">${getTotalExpenses().toFixed(2)}</p>
+          <p className="text-2xl font-bold text-blue-600">${formatCurrency(getTotalExpenses())}</p>
         </div>
 
         <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
@@ -309,7 +311,7 @@ export default function ExpensesPanel() {
 
         <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200">
           <p className="text-sm text-gray-600 mb-1">Este Mes</p>
-          <p className="text-2xl font-bold text-purple-600">${getMonthExpenses(getCurrentMonth()).toFixed(2)}</p>
+          <p className="text-2xl font-bold text-purple-600">${formatCurrency(getMonthExpenses(getCurrentMonth()))}</p>
         </div>
       </div>
 
@@ -353,7 +355,7 @@ export default function ExpensesPanel() {
                         {getMonthName(expense.month)}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-green-600 text-right">
-                        ${expense.amount.toFixed(2)}
+                        ${formatCurrency(expense.amount)}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-center">
                         {expense.receiptUrl && (

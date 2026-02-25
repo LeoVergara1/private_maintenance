@@ -67,10 +67,15 @@ export const getExpensesByYear = async (year) => {
     
     const snapshot = await getDocs(q);
     
-    return snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    const expenses = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data
+      };
+    });
+
+    return expenses;
   } catch (error) {
     console.error('Error al obtener gastos:', error);
     throw error;

@@ -52,5 +52,21 @@ service cloud.firestore {
       // No one can delete payments
       allow delete: if false;
     }
+    
+    // Expenses collection rules
+    match /expenses/{expenseId} {
+      // All authenticated users can read expenses (needed for admin dashboard)
+      allow read: if isAuthenticated();
+      
+      // All authenticated users can create expenses
+      // (Access control via frontend - ExpensesPanel is admin-only)
+      allow create: if isAuthenticated();
+      
+      // All authenticated users can update expenses
+      allow update: if isAuthenticated();
+      
+      // All authenticated users can delete expenses
+      allow delete: if isAuthenticated();
+    }
   }
 }

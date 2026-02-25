@@ -7,7 +7,6 @@ import {
   doc, 
   updateDoc,
   deleteDoc,
-  orderBy,
   Timestamp,
   getDoc
 } from 'firebase/firestore';
@@ -56,21 +55,28 @@ export const uploadExpenseReceipt = async (file, expenseId) => {
 
 /**
  * Get all expenses for a specific year
+ * Sorted by createdAt descending (client-side to avoid index requirement)
  */
 export const getExpensesByYear = async (year) => {
   try {
     const q = query(
       collection(db, 'expenses'),
-      where('year', '==', year),
-      orderBy('createdAt', 'desc')
+      where('year', '==', year)
     );
     
     const snapshot = await getDocs(q);
     
-    return snapshot.docs.map(doc => ({
+    const expenses = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     }));
+
+    // Sort by createdAt descending on client-side
+    return expenses.sort((a, b) => {
+      const timeA = a.createdAt?.seconds || 0;
+      const timeB = b.createdAt?.seconds || 0;
+      return timeB - timeA;
+    });
   } catch (error) {
     console.error('Error al obtener gastos:', error);
     throw error;
@@ -79,20 +85,25 @@ export const getExpensesByYear = async (year) => {
 
 /**
  * Get all expenses (no year filter)
+ * Sorted by createdAt descending (client-side to avoid index requirement)
  */
 export const getAllExpenses = async () => {
   try {
-    const q = query(
-      collection(db, 'expenses'),
-      orderBy('createdAt', 'desc')
-    );
+    const q = query(collection(db, 'expenses'));
     
     const snapshot = await getDocs(q);
     
-    return snapshot.docs.map(doc => ({
+    const expenses = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     }));
+
+    // Sort by createdAt descending on client-side
+    return expenses.sort((a, b) => {
+      const timeA = a.createdAt?.seconds || 0;
+      const timeB = b.createdAt?.seconds || 0;
+      return timeB - timeA;
+    });
   } catch (error) {
     console.error('Error al obtener todos los gastos:', error);
     throw error;
@@ -142,22 +153,29 @@ export const deleteExpense = async (expenseId, receiptUrl) => {
 
 /**
  * Get expenses for a specific month and year
+ * Sorted by createdAt descending (client-side to avoid index requirement)
  */
 export const getExpensesByMonth = async (month, year) => {
   try {
     const q = query(
       collection(db, 'expenses'),
       where('month', '==', month),
-      where('year', '==', year),
-      orderBy('createdAt', 'desc')
+      where('year', '==', year)
     );
     
     const snapshot = await getDocs(q);
     
-    return snapshot.docs.map(doc => ({
+    const expenses = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     }));
+
+    // Sort by createdAt descending on client-side
+    return expenses.sort((a, b) => {
+      const timeA = a.createdAt?.seconds || 0;
+      const timeB = b.createdAt?.seconds || 0;
+      return timeB - timeA;
+    });
   } catch (error) {
     console.error('Error al obtener gastos del mes:', error);
     throw error;

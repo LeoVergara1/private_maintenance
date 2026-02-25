@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import { createExpense, uploadExpenseReceipt, deleteExpense, getExpensesByYear, updateExpense } from '../services/expensesService';
 import { getCurrentMonth, getCurrentYear, getMonthName } from '../utils/dateValidation';
 import { validateFile } from '../utils/fileValidation';
 
 export default function ExpensesPanel() {
+  const { currentUser } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -57,6 +59,14 @@ export default function ExpensesPanel() {
     try {
       setSubmitting(true);
 
+      // Verify user is authenticated
+      if (!currentUser) {
+        throw new Error('Usuario no autenticado');
+      }
+
+      console.log('Usuario autenticado:', currentUser.uid);
+      console.log('Archivo a subir:', selectedFile.name, selectedFile.size, selectedFile.type);
+
       // Create expense record first to get the ID
       const expenseData = {
         description: description.trim(),
@@ -67,10 +77,14 @@ export default function ExpensesPanel() {
         createdAt: new Date()
       };
 
+      console.log('Creando documento de gasto...');
       const expense = await createExpense(expenseData);
+      console.log('Gasto creado con ID:', expense.id);
 
       // Upload receipt using the expense ID
+      console.log('Subiendo archivo a expenses/' + expense.id + '/...');
       const receiptUrl = await uploadExpenseReceipt(selectedFile, expense.id);
+      console.log('Archivo subido:', receiptUrl);
 
       // Update expense with receipt URL
       await updateExpense(expense.id, { receiptUrl });
@@ -89,8 +103,11 @@ export default function ExpensesPanel() {
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      console.error('Error al registrar gasto:', err);
-      setError('Error al registrar el gasto. Por favor intenta de nuevo.');
+      console.error('Error completo:', err);
+      console.error('Mensaje:', err.message);
+      console.error('Código:', err.code);
+      console.error('Detalles:', err);
+      setError(`Error al registrar el gasto: ${err.message}`);
     } finally {
       setSubmitting(false);
     }

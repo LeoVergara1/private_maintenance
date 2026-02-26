@@ -5,6 +5,7 @@ export default function UnregisteredHousesPanel() {
   const [unregisteredHouses, setUnregisteredHouses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showHouses, setShowHouses] = useState(false);
 
   useEffect(() => {
     loadUnregisteredHouses();
@@ -53,12 +54,39 @@ export default function UnregisteredHousesPanel() {
   return (
     <div className="bg-white rounded-lg shadow-md p-6 mb-6">
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <span className="text-2xl">🏠</span>
-            Casas sin Registro
-          </h2>
-          <p className="text-sm text-gray-600 mt-1">
+        <div className="flex-1">
+          <div className="flex items-center gap-4">
+            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <span className="text-2xl">🏠</span>
+              Casas sin Registro
+            </h2>
+            <button
+              onClick={() => setShowHouses(!showHouses)}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                showHouses
+                  ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+              title={showHouses ? 'Ocultar desglose' : 'Mostrar desglose'}
+            >
+              {showHouses ? (
+                <span className="flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                  </svg>
+                  Ocultar
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
+                  Mostrar
+                </span>
+              )}
+            </button>
+          </div>
+          <p className="text-sm text-gray-600 mt-2">
             {unregisteredHouses.length} de 60 casas sin usuario registrado
           </p>
         </div>
@@ -70,8 +98,8 @@ export default function UnregisteredHousesPanel() {
         </div>
       </div>
 
-      {unregisteredHouses.length > 0 ? (
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+      {showHouses && unregisteredHouses.length > 0 ? (
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 mb-6">
           {unregisteredHouses.map(houseNum => (
             <div
               key={houseNum}
@@ -83,15 +111,15 @@ export default function UnregisteredHousesPanel() {
             </div>
           ))}
         </div>
-      ) : (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+      ) : showHouses && unregisteredHouses.length === 0 ? (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center mb-6">
           <p className="text-green-700 font-medium">
             ✓ ¡Todas las casas tienen usuario registrado!
           </p>
         </div>
-      )}
+      ) : null}
 
-      <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <p className="text-sm text-blue-700">
           <span className="font-semibold">Tip:</span> Puedes registrar pagos manuales para estas casas usando el panel de "Registrar Pago Manual" arriba. Cuando el usuario de la casa se registre, el pago se vinculará automáticamente.
         </p>

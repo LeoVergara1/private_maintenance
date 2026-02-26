@@ -7,6 +7,7 @@ import { exportPaymentsToExcel } from '../utils/excelExport';
 import PaymentStatusModal from '../components/PaymentStatusModal';
 import ReceiptModal from '../components/ReceiptModal';
 import UnpaidHousesPanel from '../components/UnpaidHousesPanel';
+import UnregisteredHousesPanel from '../components/UnregisteredHousesPanel';
 import ExpensesPanel from '../components/ExpensesPanel';
 import ManualPaymentPanel from '../components/ManualPaymentPanel';
 
@@ -179,6 +180,9 @@ export default function AdminDashboard() {
 
         {/* Unpaid Houses Panel */}
         <UnpaidHousesPanel />
+
+        {/* Unregistered Houses Panel */}
+        <UnregisteredHousesPanel />
 
         {/* Manual Payment Panel */}
         <ManualPaymentPanel />

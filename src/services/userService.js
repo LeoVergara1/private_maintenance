@@ -89,3 +89,20 @@ export const getUserByHouseNumber = async (houseNumber) => {
     throw error;
   }
 };
+/**
+ * Get all unregistered houses (1-60)
+ */
+export const getUnregisteredHouses = async () => {
+  try {
+    const allUsers = await getAllUsers();
+    const registeredHouses = allUsers
+      .map(user => user.houseNumber)
+      .filter(num => num !== undefined && num !== null);
+
+    const allHouses = Array.from({ length: 60 }, (_, i) => i + 1);
+    return allHouses.filter(house => !registeredHouses.includes(house));
+  } catch (error) {
+    console.error('Error al obtener casas sin registro:', error);
+    throw error;
+  }
+};

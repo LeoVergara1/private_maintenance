@@ -80,7 +80,11 @@ export default function AdminFinancialReport() {
           isLate: payment.isLate,
           status: payment.status
         });
-        report[payment.month].totalCollected += payment.amount;
+        
+        // Only count approved payments in totalCollected (like AdminDashboard)
+        if (payment.status === 'approved') {
+          report[payment.month].totalCollected += payment.amount;
+        }
 
         if (payment.isLate) {
           report[payment.month].latePayments++;

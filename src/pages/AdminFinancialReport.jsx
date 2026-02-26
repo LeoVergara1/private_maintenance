@@ -228,6 +228,21 @@ export default function AdminFinancialReport() {
                 ${formatCurrency(monthExpenses.reduce((sum, exp) => sum + exp.amount, 0))}
               </p>
             </div>
+
+            <div className={`bg-white rounded-lg shadow p-6 ${
+              (monthlyReport[selectedMonth].totalCollected + monthInitialDeposits.reduce((sum, dep) => sum + dep.amount, 0) - monthExpenses.reduce((sum, exp) => sum + exp.amount, 0)) >= 0
+                ? 'border-l-4 border-green-500'
+                : 'border-l-4 border-red-500'
+            }`}>
+              <p className="text-sm font-medium text-gray-600">💰 Dinero en Cuenta</p>
+              <p className={`text-3xl font-bold mt-2 ${
+                (monthlyReport[selectedMonth].totalCollected + monthInitialDeposits.reduce((sum, dep) => sum + dep.amount, 0) - monthExpenses.reduce((sum, exp) => sum + exp.amount, 0)) >= 0
+                  ? 'text-green-600'
+                  : 'text-red-600'
+              }`}>
+                ${formatCurrency(Math.abs(monthlyReport[selectedMonth].totalCollected + monthInitialDeposits.reduce((sum, dep) => sum + dep.amount, 0) - monthExpenses.reduce((sum, exp) => sum + exp.amount, 0)))}
+              </p>
+            </div>
           </div>
         )}
 

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { createManualPayment, updatePaymentStatus } from '../services/paymentService';
+import { useState, useEffect } from 'react';
+import { createManualPayment, updatePaymentStatus, getAllPaymentsByYear } from '../services/paymentService';
 import { getCurrentMonth, getCurrentYear, getMonthName } from '../utils/dateValidation';
 import { validateFile } from '../utils/fileValidation';
 import { useAuth } from '../contexts/AuthContext';
@@ -12,6 +12,8 @@ export default function ManualPaymentPanel() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [allPayments, setAllPayments] = useState([]);
+  const [duplicateWarning, setDuplicateWarning] = useState(null);
 
   // Form state
   const [houseNumber, setHouseNumber] = useState('');
@@ -20,6 +22,42 @@ export default function ManualPaymentPanel() {
   const [selectedYear, setSelectedYear] = useState(getCurrentYear());
   const [isLate, setIsLate] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+
+  // Load all payments when component mounts
+  useEffect(() => {
+    const loadPayments = async () => {
+      try {
+        const payments = await getAllPaymentsByYear(getCurrentYear());
+        setAllPayments(payments);
+      } catch (err) {
+        console.error('Error al cargar pagos:', err);
+      }
+    };
+    loadPayments();
+  }, []);
+
+  // Check for duplicate payments when house, month, or year changes
+  useEffect(() => {
+    if (houseNumber && selectedMonth && selectedYear) {
+      const duplicate = allPayments.find(
+        p => p.houseNumber === parseInt(houseNumber) && 
+             p.month === parseInt(selectedMonth) && 
+             p.year === parseInt(selectedYear)
+      );
+
+      if (duplicate) {
+        setDuplicateWarning({
+          exists: true,
+          payment: duplicate,
+          message: `Ya existe un pago ${duplicate.status === 'approved' ? 'aprobado' : 'pendiente'} para esta casa en ${getMonthName(duplicate.month)} ${duplicate.year}`
+        });
+      } else {
+        setDuplicateWarning(null);
+      }
+    } else {
+      setDuplicateWarning(null);
+    }
+  }, [houseNumber, selectedMonth, selectedYear, allPayments]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -226,6 +264,21 @@ export default function ManualPaymentPanel() {
               Marcar como pago tardío
             </label>
           </div>
+
+          {duplicateWarning && duplicateWarning.exists && (
+            <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded">
+              <div className="flex items-start gap-3">
+                <div className="text-2xl">⚠️</div>
+                <div>
+                  <h3 className="font-semibold text-orange-800">Pago Duplicado</h3>
+                  <p className="text-sm text-orange-700 mt-1">{duplicateWarning.message}</p>
+                  <p className="text-xs text-orange-600 mt-2">
+                    Monto del pago existente: <span className="font-medium">${duplicateWarning.payment.amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div>
             <label htmlFor="receipt" className="block text-sm font-medium text-gray-700 mb-2">

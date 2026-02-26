@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { createInitialDeposit, getInitialDepositsByYear, deleteInitialDeposit } from '../services/initialDepositService';
 import { getCurrentYear, getMonthName } from '../utils/dateValidation';
+import { validateFile } from '../utils/fileValidation';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '../config/firebase';
 
 export default function InitialDepositPanel() {
   const { currentUser } = useAuth();
@@ -15,6 +18,8 @@ export default function InitialDepositPanel() {
   const [deposits, setDeposits] = useState([]);
   const [loadingDeposits, setLoadingDeposits] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [fileError, setFileError] = useState('');
 
   const currentYear = getCurrentYear();
 
@@ -48,18 +53,27 @@ export default function InitialDepositPanel() {
     setLoading(true);
 
     try {
+      let receiptUrl = null;
+      
+      // Upload receipt if file was provided
+      if (selectedFile) {
+        receiptUrl = await uploadReceiptFile(selectedFile);
+      }
+
       await createInitialDeposit(
         parseFloat(amount),
         parseInt(selectedMonth),
         parseInt(selectedYear),
         description,
-        currentUser.uid
+        currentUser.uid,
+        receiptUrl
       );
 
       setSuccess('✅ Abono inicial registrado correctamente');
       setAmount('');
       setDescription('');
       setSelectedMonth(new Date().getMonth() + 1);
+      setSelectedFile(null);
 
       // Recargar abonos
       await loadDeposits();
@@ -88,6 +102,30 @@ export default function InitialDepositPanel() {
         setError(`Error al eliminar: ${err.message}`);
       }
     }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const validation = validateFile(file);
+      if (!validation.valid) {
+        setFileError(validation.error);
+        setSelectedFile(null);
+        return;
+      }
+      setSelectedFile(file);
+      setFileError('');
+    }
+  };
+
+  const uploadReceiptFile = async (file) => {
+    const timestamp = Date.now();
+    const fileExtension = file.name.split('.').pop();
+    const fileName = `deposit-${timestamp}.${fileExtension}`;
+    const storageRef = ref(storage, `receipts/deposits/${fileName}`);
+    
+    await uploadBytes(storageRef, file);
+    return await getDownloadURL(storageRef);
   };
 
   const formatCurrency = (amount) => {
@@ -179,6 +217,33 @@ export default function InitialDepositPanel() {
             />
           </div>
 
+          <div>
+            <label htmlFor="receipt" className="block text-sm font-medium text-gray-700 mb-2">
+              Comprobante (Opcional)
+            </label>
+            <input
+              type="file"
+              id="receipt"
+              onChange={handleFileChange}
+              accept=".jpg,.jpeg,.png,.heic,.pdf"
+              disabled={loading}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Formatos: JPG, PNG, HEIC, PDF (Máx. 5MB)
+            </p>
+            {selectedFile && (
+              <p className="mt-2 text-sm text-green-600 flex items-center gap-1">
+                ✓ {selectedFile.name}
+              </p>
+            )}
+            {fileError && (
+              <p className="mt-2 text-sm text-red-600">
+                {fileError}
+              </p>
+            )}
+          </div>
+
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
               {error}
@@ -259,6 +324,7 @@ export default function InitialDepositPanel() {
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Mes</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Descripción</th>
                 <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase">Monto</th>
+                <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase">Comprobante</th>
                 <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase">Acción</th>
               </tr>
             </thead>
@@ -276,6 +342,23 @@ export default function InitialDepositPanel() {
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-green-600 text-right">
                     ${formatCurrency(deposit.amount)}
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-center">
+                    {deposit.receiptUrl ? (
+                      <a
+                        href={deposit.receiptUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
+                        title="Ver comprobante"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </a>
+                    ) : (
+                      <span className="text-gray-400 text-sm">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-center">
                     <button

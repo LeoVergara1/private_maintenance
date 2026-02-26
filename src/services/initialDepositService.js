@@ -15,9 +15,9 @@ import { db } from '../config/firebase';
  * Create initial deposit/capital contribution
  * Used for registering initial balance (saldo inicial) of the condominium
  */
-export const createInitialDeposit = async (amount, month, year, description, adminUid) => {
+export const createInitialDeposit = async (amount, month, year, description, adminUid, receiptUrl = null) => {
   try {
-    const docRef = await addDoc(collection(db, 'initialDeposits'), {
+    const depositData = {
       amount: parseFloat(amount),
       month: parseInt(month),
       year: parseInt(year),
@@ -25,7 +25,14 @@ export const createInitialDeposit = async (amount, month, year, description, adm
       createdBy: adminUid,
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now()
-    });
+    };
+
+    // Add receiptUrl if provided
+    if (receiptUrl) {
+      depositData.receiptUrl = receiptUrl;
+    }
+
+    const docRef = await addDoc(collection(db, 'initialDeposits'), depositData);
 
     return { id: docRef.id };
   } catch (error) {

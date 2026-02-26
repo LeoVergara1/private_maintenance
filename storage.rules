@@ -62,6 +62,23 @@ service firebase.storage {
       allow delete: if false;
     }
 
+    // Initial deposits receipts storage rules
+    match /receipts/deposits/{fileName} {
+      // Authenticated users (admins) can upload deposit receipts
+      allow create: if isAuthenticated() &&
+                       isValidFileType() &&
+                       isValidFileSize();
+      
+      // Authenticated users can read deposit receipts
+      allow read: if isAuthenticated();
+      
+      // Cannot update deposit receipts
+      allow update: if false;
+      
+      // Cannot delete deposit receipts
+      allow delete: if false;
+    }
+
     // Expenses storage rules
     // Temporarily permissive for debugging permissions issues
     match /expenses/{expenseId}/{fileName} {

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { createUser, isHouseNumberTaken } from '../services/userService';
+import { getUnlinkedPaymentsByHouse, linkPaymentToUser } from '../services/paymentService';
 
 export default function Onboarding() {
   const { currentUser, refreshUserData } = useAuth();
@@ -44,6 +45,19 @@ export default function Onboarding() {
         houseNumber: houseNum,
         role: 'resident' // Default role
       });
+
+      // Auto-link any unlinked payments for this house
+      try {
+        const unlinkedPayments = await getUnlinkedPaymentsByHouse(houseNum);
+        if (unlinkedPayments.length > 0) {
+          for (const payment of unlinkedPayments) {
+            await linkPaymentToUser(payment.id, currentUser.uid);
+          }
+        }
+      } catch (error) {
+        console.error('Error al vincular pagos:', error);
+        // Don't fail registration if payment linking has issues
+      }
 
       // Refresh user data in context
       await refreshUserData();

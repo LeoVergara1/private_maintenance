@@ -8,6 +8,7 @@ import PaymentStatusModal from '../components/PaymentStatusModal';
 import ReceiptModal from '../components/ReceiptModal';
 import UnpaidHousesPanel from '../components/UnpaidHousesPanel';
 import ExpensesPanel from '../components/ExpensesPanel';
+import ManualPaymentPanel from '../components/ManualPaymentPanel';
 
 export default function AdminDashboard() {
   const { signOut } = useAuth();
@@ -178,6 +179,9 @@ export default function AdminDashboard() {
 
         {/* Unpaid Houses Panel */}
         <UnpaidHousesPanel />
+
+        {/* Manual Payment Panel */}
+        <ManualPaymentPanel />
 
         {/* Expenses Panel */}
         <ExpensesPanel />

@@ -176,3 +176,78 @@ export const updatePaymentStatus = async (paymentId, updates) => {
     throw error;
   }
 };
+
+/**
+ * Create a manual payment (admin only) without userId
+ * These payments will be linked to a user when they register
+ */
+export const createManualPayment = async (houseNumber, amount, month, year, createdByUserId, isLate = false) => {
+  try {
+    const paymentData = {
+      houseNumber,
+      amount,
+      month,
+      year,
+      userId: null, // Manual payments have no user yet
+      createdBy: createdByUserId, // Track which admin created this
+      isLate,
+      status: 'pending',
+      manuallyCreated: true,
+      linkedAt: null, // Will be set when linked to user
+      receiptUrl: null,
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now()
+    };
+
+    const docRef = await addDoc(collection(db, 'payments'), paymentData);
+    return {
+      id: docRef.id,
+      ...paymentData
+    };
+  } catch (error) {
+    console.error('Error al crear pago manual:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get all unlinked payments for a specific house
+ * Used when user registers to auto-link payments
+ */
+export const getUnlinkedPaymentsByHouse = async (houseNumber) => {
+  try {
+    const q = query(
+      collection(db, 'payments'),
+      where('houseNumber', '==', houseNumber),
+      where('userId', '==', null),
+      orderBy('createdAt', 'desc')
+    );
+
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error('Error al obtener pagos sin usuario:', error);
+    throw error;
+  }
+};
+
+/**
+ * Link an unlinked payment to a user (when they register)
+ * Updates userId and linkedAt timestamp
+ */
+export const linkPaymentToUser = async (paymentId, userId) => {
+  try {
+    const paymentRef = doc(db, 'payments', paymentId);
+    await updateDoc(paymentRef, {
+      userId,
+      linkedAt: Timestamp.now(),
+      updatedAt: Timestamp.now()
+    });
+  } catch (error) {
+    console.error('Error al vincular pago a usuario:', error);
+    throw error;
+  }
+};

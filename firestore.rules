@@ -42,8 +42,10 @@ service cloud.firestore {
       // All authenticated users can read all payments (needed for financial reports)
       allow read: if isAuthenticated();
       
-      // Users can create payments
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Users can create payments for themselves, admins can create manual payments (userId: null)
+      allow create: if isAuthenticated() && 
+                       (request.resource.data.userId == request.auth.uid || 
+                        (isAdmin() && request.resource.data.userId == null));
       
       // Only admins can update payments
       allow update: if isAdmin();

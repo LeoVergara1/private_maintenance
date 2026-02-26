@@ -45,6 +45,23 @@ service firebase.storage {
       // This saves quota by not reading user documents in rules
     }
 
+    // Manual payment receipts storage rules
+    match /receipts/manual/{houseNumber}/{fileName} {
+      // Authenticated users (admins) can upload manual payment receipts
+      allow create: if isAuthenticated() &&
+                       isValidFileType() &&
+                       isValidFileSize();
+      
+      // Authenticated users can read manual payment receipts
+      allow read: if isAuthenticated();
+      
+      // Cannot update manual payment receipts
+      allow update: if false;
+      
+      // Cannot delete manual payment receipts
+      allow delete: if false;
+    }
+
     // Expenses storage rules
     // Temporarily permissive for debugging permissions issues
     match /expenses/{expenseId}/{fileName} {

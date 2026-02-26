@@ -355,6 +355,7 @@ export default function AdminFinancialReport() {
                         <th className="text-left px-4 py-2 bg-gray-50 font-medium text-gray-700">Fecha</th>
                         <th className="text-left px-4 py-2 bg-gray-50 font-medium text-gray-700">Descripción</th>
                         <th className="text-right px-4 py-2 bg-gray-50 font-medium text-gray-700">Monto</th>
+                        <th className="text-center px-4 py-2 bg-gray-50 font-medium text-gray-700">Comprobante</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -365,6 +366,23 @@ export default function AdminFinancialReport() {
                             <td className="px-4 py-3 text-sm text-gray-600">{createdDate.toLocaleDateString('es-MX')}</td>
                             <td className="px-4 py-3 font-medium text-gray-900">{deposit.description}</td>
                             <td className="px-4 py-3 text-sm font-bold text-green-600 text-right">${formatCurrency(deposit.amount)}</td>
+                            <td className="px-4 py-3 text-center">
+                              {deposit.receiptUrl ? (
+                                <a
+                                  href={deposit.receiptUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
+                                  title="Ver comprobante"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                  </svg>
+                                </a>
+                              ) : (
+                                <span className="text-gray-400 text-sm">—</span>
+                              )}
+                            </td>
                           </tr>
                         );
                       })}

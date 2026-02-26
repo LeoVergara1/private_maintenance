@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getAllPaymentsByYear } from '../services/paymentService';
-import { getExpensesByMonth } from '../services/expensesService';
-import { getInitialDepositsByMonthYear } from '../services/initialDepositService';
+import { getExpensesByMonth, getExpensesByYear } from '../services/expensesService';
+import { getInitialDepositsByMonthYear, getInitialDepositsByYear } from '../services/initialDepositService';
 import { getAllUsers } from '../services/userService';
 import { getCurrentYear, getMonthName } from '../utils/dateValidation';
 
@@ -17,6 +17,9 @@ export default function AdminFinancialReport() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [monthExpenses, setMonthExpenses] = useState([]);
   const [monthInitialDeposits, setMonthInitialDeposits] = useState([]);
+  const [yearExpenses, setYearExpenses] = useState([]);
+  const [yearInitialDeposits, setYearInitialDeposits] = useState([]);
+  const [allPayments, setAllPayments] = useState([]);
 
   const currentYear = getCurrentYear();
 
@@ -31,6 +34,7 @@ export default function AdminFinancialReport() {
 
       // Get all payments for the year
       const payments = await getAllPaymentsByYear(currentYear);
+      setAllPayments(payments);
 
       // Get all residents (houses)
       const users = await getAllUsers();
@@ -41,9 +45,17 @@ export default function AdminFinancialReport() {
       const expenses = await getExpensesByMonth(selectedMonth, currentYear);
       setMonthExpenses(expenses);
 
+      // Get expenses for the entire year
+      const expensesYear = await getExpensesByYear(currentYear);
+      setYearExpenses(expensesYear);
+
       // Get initial deposits for selected month
       const deposits = await getInitialDepositsByMonthYear(selectedMonth, currentYear);
       setMonthInitialDeposits(deposits);
+
+      // Get initial deposits for the entire year
+      const depositsYear = await getInitialDepositsByYear(currentYear);
+      setYearInitialDeposits(depositsYear);
 
       // Generate report
       generateReport(payments, residents);
@@ -234,17 +246,17 @@ export default function AdminFinancialReport() {
             </div>
 
             <div className={`bg-white rounded-lg shadow p-6 ${
-              (monthlyReport[selectedMonth].totalCollected + monthInitialDeposits.reduce((sum, dep) => sum + dep.amount, 0) - monthExpenses.reduce((sum, exp) => sum + exp.amount, 0)) >= 0
+              (allPayments.filter(p => p.status === 'approved').reduce((sum, p) => sum + p.amount, 0) + yearInitialDeposits.reduce((sum, dep) => sum + dep.amount, 0) - yearExpenses.reduce((sum, exp) => sum + exp.amount, 0)) >= 0
                 ? 'border-l-4 border-green-500'
                 : 'border-l-4 border-red-500'
             }`}>
-              <p className="text-sm font-medium text-gray-600">💰 Dinero en Cuenta</p>
+              <p className="text-sm font-medium text-gray-600">💰 Dinero en Cuenta (Año)</p>
               <p className={`text-3xl font-bold mt-2 ${
-                (monthlyReport[selectedMonth].totalCollected + monthInitialDeposits.reduce((sum, dep) => sum + dep.amount, 0) - monthExpenses.reduce((sum, exp) => sum + exp.amount, 0)) >= 0
+                (allPayments.filter(p => p.status === 'approved').reduce((sum, p) => sum + p.amount, 0) + yearInitialDeposits.reduce((sum, dep) => sum + dep.amount, 0) - yearExpenses.reduce((sum, exp) => sum + exp.amount, 0)) >= 0
                   ? 'text-green-600'
                   : 'text-red-600'
               }`}>
-                ${formatCurrency(Math.abs(monthlyReport[selectedMonth].totalCollected + monthInitialDeposits.reduce((sum, dep) => sum + dep.amount, 0) - monthExpenses.reduce((sum, exp) => sum + exp.amount, 0)))}
+                ${formatCurrency(Math.abs(allPayments.filter(p => p.status === 'approved').reduce((sum, p) => sum + p.amount, 0) + yearInitialDeposits.reduce((sum, dep) => sum + dep.amount, 0) - yearExpenses.reduce((sum, exp) => sum + exp.amount, 0)))}
               </p>
             </div>
           </div>

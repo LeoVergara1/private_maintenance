@@ -45,13 +45,27 @@ export default function AdminDashboard() {
     try {
       setLoading(true);
       const allPayments = await getAllPaymentsByYear(currentYear);
-      const allExpenses = await getExpensesByYear(currentYear);
-      const allDeposits = await getInitialDepositsByYear(currentYear);
       setPayments(allPayments);
-      setExpenses(allExpenses);
-      setInitialDeposits(allDeposits);
+
+      // Load expenses (with fallback)
+      try {
+        const allExpenses = await getExpensesByYear(currentYear);
+        setExpenses(allExpenses);
+      } catch (err) {
+        console.error('Error al cargar gastos:', err);
+        setExpenses([]);
+      }
+
+      // Load initial deposits (with fallback)
+      try {
+        const allDeposits = await getInitialDepositsByYear(currentYear);
+        setInitialDeposits(allDeposits);
+      } catch (err) {
+        console.error('Error al cargar abonos iniciales:', err);
+        setInitialDeposits([]);
+      }
     } catch (error) {
-      console.error('Error al cargar datos:', error);
+      console.error('Error al cargar pagos:', error);
     } finally {
       setLoading(false);
     }
@@ -100,10 +114,13 @@ export default function AdminDashboard() {
       .filter(p => p.status === 'approved')
       .reduce((sum, p) => sum + p.amount, 0);
 
-    // Calculate totals for money in account
+    // Calculate totals for money in account (using ALL payments, not filtered)
     const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
     const totalDeposits = initialDeposits.reduce((sum, dep) => sum + dep.amount, 0);
-    const availableMoney = totalAmount + totalDeposits - totalExpenses;
+    const totalPaymentsApproved = payments
+      .filter(p => p.status === 'approved')
+      .reduce((sum, p) => sum + p.amount, 0);
+    const availableMoney = totalPaymentsApproved + totalDeposits - totalExpenses;
 
     return { total, approved, pending, rejected, totalAmount, totalExpenses, totalDeposits, availableMoney };
   };

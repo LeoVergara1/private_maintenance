@@ -1,7 +1,10 @@
 import { useState } from 'react';
-import { createManualPayment } from '../services/paymentService';
+import { createManualPayment, updatePaymentStatus } from '../services/paymentService';
 import { getCurrentMonth, getCurrentYear, getMonthName } from '../utils/dateValidation';
+import { validateFile } from '../utils/fileValidation';
 import { useAuth } from '../contexts/AuthContext';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '../config/firebase';
 
 export default function ManualPaymentPanel() {
   const { currentUser } = useAuth();
@@ -16,6 +19,7 @@ export default function ManualPaymentPanel() {
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
   const [selectedYear, setSelectedYear] = useState(getCurrentYear());
   const [isLate, setIsLate] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -44,6 +48,17 @@ export default function ManualPaymentPanel() {
         isLate
       );
 
+      // Upload receipt if file was provided
+      if (selectedFile) {
+        try {
+          const receiptUrl = await uploadReceiptFile(selectedFile, parseInt(houseNumber));
+          await updatePaymentStatus(result.id, { receiptUrl });
+        } catch (uploadErr) {
+          console.error('Error al subir comprobante:', uploadErr);
+          setError(`Pago registrado pero error al subir comprobante: ${uploadErr.message}`);
+        }
+      }
+
       // Show different message based on whether payment was linked
       if (result.isLinked) {
         setSuccess('✅ Pago manual registrado y vinculado a usuario existente');
@@ -56,6 +71,7 @@ export default function ManualPaymentPanel() {
       setSelectedMonth(getCurrentMonth());
       setSelectedYear(getCurrentYear());
       setIsLate(false);
+      setSelectedFile(null);
 
       setTimeout(() => {
         setSuccess('');
@@ -74,6 +90,30 @@ export default function ManualPaymentPanel() {
       minimumFractionDigits: 2, 
       maximumFractionDigits: 2 
     });
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const validation = validateFile(file);
+      if (!validation.valid) {
+        setError(validation.error);
+        setSelectedFile(null);
+        return;
+      }
+      setSelectedFile(file);
+      setError('');
+    }
+  };
+
+  const uploadReceiptFile = async (file, houseNumber) => {
+    const timestamp = Date.now();
+    const fileExtension = file.name.split('.').pop();
+    const fileName = `${houseNumber}-${timestamp}.${fileExtension}`;
+    const storageRef = ref(storage, `receipts/manual/${houseNumber}/${fileName}`);
+    
+    await uploadBytes(storageRef, file);
+    return await getDownloadURL(storageRef);
   };
 
   return (
@@ -185,6 +225,28 @@ export default function ManualPaymentPanel() {
             <label htmlFor="isLate" className="text-sm font-medium text-gray-700">
               Marcar como pago tardío
             </label>
+          </div>
+
+          <div>
+            <label htmlFor="receipt" className="block text-sm font-medium text-gray-700 mb-2">
+              Comprobante de Pago (Opcional)
+            </label>
+            <input
+              type="file"
+              id="receipt"
+              onChange={handleFileChange}
+              accept=".jpg,.jpeg,.png,.heic,.pdf"
+              disabled={loading}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Formatos: JPG, PNG, HEIC, PDF (Máx. 5MB)
+            </p>
+            {selectedFile && (
+              <p className="mt-2 text-sm text-green-600 flex items-center gap-1">
+                ✓ {selectedFile.name}
+              </p>
+            )}
           </div>
 
           {error && (

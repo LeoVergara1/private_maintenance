@@ -14,7 +14,8 @@ export default function ManualPaymentPanel() {
   const [houseNumber, setHouseNumber] = useState('');
   const [amount, setAmount] = useState(300);
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
-  const [submitting, setSubmitting] = useState(false);
+  const [selectedYear, setSelectedYear] = useState(getCurrentYear());
+  const [isLate, setIsLate] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

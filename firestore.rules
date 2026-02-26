@@ -69,5 +69,20 @@ service cloud.firestore {
       // All authenticated users can delete expenses
       allow delete: if isAuthenticated();
     }
+
+    // Initial Deposits collection rules
+    match /initialDeposits/{depositId} {
+      // All authenticated users can read initial deposits (needed for financial reports)
+      allow read: if isAuthenticated();
+      
+      // Only admins can create initial deposits
+      allow create: if isAdmin() && request.resource.data.amount > 0;
+      
+      // Only admins can update initial deposits
+      allow update: if isAdmin();
+      
+      // Only admins can delete initial deposits
+      allow delete: if isAdmin();
+    }
   }
 }

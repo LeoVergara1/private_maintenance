@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getAllPaymentsByYear } from '../services/paymentService';
+import { getExpensesByYear } from '../services/expensesService';
+import { getInitialDepositsByYear } from '../services/initialDepositService';
 import { getCurrentYear, getMonthName } from '../utils/dateValidation';
 import { exportPaymentsToExcel } from '../utils/excelExport';
 import PaymentStatusModal from '../components/PaymentStatusModal';
@@ -10,6 +12,7 @@ import UnpaidHousesPanel from '../components/UnpaidHousesPanel';
 import UnregisteredHousesPanel from '../components/UnregisteredHousesPanel';
 import ExpensesPanel from '../components/ExpensesPanel';
 import ManualPaymentPanel from '../components/ManualPaymentPanel';
+import InitialDepositPanel from '../components/InitialDepositPanel';
 
 export default function AdminDashboard() {
   const { signOut } = useAuth();
@@ -20,6 +23,8 @@ export default function AdminDashboard() {
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [selectedReceipt, setSelectedReceipt] = useState(null);
   const [exporting, setExporting] = useState(false);
+  const [expenses, setExpenses] = useState([]);
+  const [initialDeposits, setInitialDeposits] = useState([]);
 
   // Filters
   const [filterStatus, setFilterStatus] = useState('all');
@@ -40,9 +45,13 @@ export default function AdminDashboard() {
     try {
       setLoading(true);
       const allPayments = await getAllPaymentsByYear(currentYear);
+      const allExpenses = await getExpensesByYear(currentYear);
+      const allDeposits = await getInitialDepositsByYear(currentYear);
       setPayments(allPayments);
+      setExpenses(allExpenses);
+      setInitialDeposits(allDeposits);
     } catch (error) {
-      console.error('Error al cargar pagos:', error);
+      console.error('Error al cargar datos:', error);
     } finally {
       setLoading(false);
     }
@@ -91,7 +100,12 @@ export default function AdminDashboard() {
       .filter(p => p.status === 'approved')
       .reduce((sum, p) => sum + p.amount, 0);
 
-    return { total, approved, pending, rejected, totalAmount };
+    // Calculate totals for money in account
+    const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+    const totalDeposits = initialDeposits.reduce((sum, dep) => sum + dep.amount, 0);
+    const availableMoney = totalAmount + totalDeposits - totalExpenses;
+
+    return { total, approved, pending, rejected, totalAmount, totalExpenses, totalDeposits, availableMoney };
   };
 
   const getStatusBadge = (status) => {
@@ -155,7 +169,7 @@ export default function AdminDashboard() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-6">
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="text-sm text-gray-600 mb-1">Total Pagos</div>
             <div className="text-3xl font-bold text-gray-900">{stats.total}</div>
@@ -173,8 +187,14 @@ export default function AdminDashboard() {
             <div className="text-3xl font-bold text-red-600">{stats.rejected}</div>
           </div>
           <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="text-sm text-gray-600 mb-1">Monto Total</div>
+            <div className="text-sm text-gray-600 mb-1">Monto Total Recaudado</div>
             <div className="text-2xl font-bold text-blue-600">${stats.totalAmount.toFixed(2)}</div>
+          </div>
+          <div className={`bg-white rounded-lg shadow-md p-6 ${stats.availableMoney >= 0 ? 'border-l-4 border-green-500' : 'border-l-4 border-red-500'}`}>
+            <div className="text-sm text-gray-600 mb-1">💰 Dinero en Cuenta</div>
+            <div className={`text-3xl font-bold ${stats.availableMoney >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              ${Math.abs(stats.availableMoney).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
           </div>
         </div>
 
@@ -189,6 +209,9 @@ export default function AdminDashboard() {
 
         {/* Expenses Panel */}
         <ExpensesPanel />
+
+        {/* Initial Deposit Panel */}
+        <InitialDepositPanel />
 
         {/* Filters and Export */}
         <div className="bg-white rounded-lg shadow-md p-6">

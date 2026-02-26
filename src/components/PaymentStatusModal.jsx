@@ -33,7 +33,7 @@ export default function PaymentStatusModal({ isOpen, onClose, payment, onUpdate 
     const timestamp = Date.now();
     const fileExtension = file.name.split('.').pop();
     const fileName = `${houseNumber}-${timestamp}.${fileExtension}`;
-    const storageRef = ref(storage, `receipts/${houseNumber}/${fileName}`);
+    const storageRef = ref(storage, `receipts/manual/${houseNumber}/${fileName}`);
     
     await uploadBytes(storageRef, file);
     return await getDownloadURL(storageRef);

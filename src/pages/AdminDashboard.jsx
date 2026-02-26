@@ -113,6 +113,9 @@ export default function AdminDashboard() {
     const totalAmount = filteredPayments
       .filter(p => p.status === 'approved')
       .reduce((sum, p) => sum + p.amount, 0);
+    const pendingAmount = filteredPayments
+      .filter(p => p.status === 'pending')
+      .reduce((sum, p) => sum + p.amount, 0);
 
     // Calculate totals for money in account (using ALL payments, not filtered)
     const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
@@ -122,7 +125,7 @@ export default function AdminDashboard() {
       .reduce((sum, p) => sum + p.amount, 0);
     const availableMoney = totalPaymentsApproved + totalDeposits - totalExpenses;
 
-    return { total, approved, pending, rejected, totalAmount, totalExpenses, totalDeposits, availableMoney };
+    return { total, approved, pending, rejected, totalAmount, pendingAmount, totalExpenses, totalDeposits, availableMoney };
   };
 
   const getStatusBadge = (status) => {
@@ -186,7 +189,7 @@ export default function AdminDashboard() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-6">
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="text-sm text-gray-600 mb-1">Total Pagos</div>
             <div className="text-3xl font-bold text-gray-900">{stats.total}</div>
@@ -206,6 +209,12 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="text-sm text-gray-600 mb-1">Monto Total Recaudado</div>
             <div className="text-2xl font-bold text-blue-600">${stats.totalAmount.toFixed(2)}</div>
+          </div>
+          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-500">
+            <div className="text-sm text-gray-600 mb-1">⏳ Pendiente de Validar</div>
+            <div className="text-3xl font-bold text-yellow-600">
+              ${stats.pendingAmount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
           </div>
           <div className={`bg-white rounded-lg shadow-md p-6 ${stats.availableMoney >= 0 ? 'border-l-4 border-green-500' : 'border-l-4 border-red-500'}`}>
             <div className="text-sm text-gray-600 mb-1">💰 Dinero en Cuenta</div>

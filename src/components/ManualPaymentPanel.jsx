@@ -14,8 +14,7 @@ export default function ManualPaymentPanel() {
   const [houseNumber, setHouseNumber] = useState('');
   const [amount, setAmount] = useState(300);
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
-  const [selectedYear, setSelectedYear] = useState(getCurrentYear());
-  const [isLate, setIsLate] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -35,7 +34,7 @@ export default function ManualPaymentPanel() {
     setLoading(true);
 
     try {
-      await createManualPayment(
+      const result = await createManualPayment(
         parseInt(houseNumber),
         parseFloat(amount),
         parseInt(selectedMonth),
@@ -44,7 +43,13 @@ export default function ManualPaymentPanel() {
         isLate
       );
 
-      setSuccess('Pago manual registrado exitosamente');
+      // Show different message based on whether payment was linked
+      if (result.isLinked) {
+        setSuccess('✅ Pago manual registrado y vinculado a usuario existente');
+      } else {
+        setSuccess('📋 Pago manual registrado - Se vinculará cuando el usuario se registre');
+      }
+
       setHouseNumber('');
       setAmount(300);
       setSelectedMonth(getCurrentMonth());

@@ -13,6 +13,7 @@ import {
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../config/firebase';
 import { getCachedData, setCachedData, clearCache } from '../utils/cacheManager';
+import { getUserByHouseNumber } from './userService';
 
 /**
  * Check if payment already exists for user in specific month/year
@@ -179,7 +180,8 @@ export const updatePaymentStatus = async (paymentId, updates) => {
 
 /**
  * Create a manual payment (admin only) without userId
- * These payments will be linked to a user when they register
+ * Automatically links to user if they're already registered
+ * If not registered yet, payment stays with userId: null until user registers
  */
 export const createManualPayment = async (houseNumber, amount, month, year, createdByUserId, isLate = false) => {
   try {
@@ -188,7 +190,7 @@ export const createManualPayment = async (houseNumber, amount, month, year, crea
       amount,
       month,
       year,
-      userId: null, // Manual payments have no user yet
+      userId: null, // Initially null
       createdBy: createdByUserId, // Track which admin created this
       isLate,
       status: 'pending',
@@ -200,9 +202,32 @@ export const createManualPayment = async (houseNumber, amount, month, year, crea
     };
 
     const docRef = await addDoc(collection(db, 'payments'), paymentData);
+    const paymentId = docRef.id;
+    let isLinked = false;
+
+    // Try to link to user if they're already registered
+    try {
+      const user = await getUserByHouseNumber(houseNumber);
+      if (user && user.uid) {
+        // User already registered, link the payment automatically
+        await updateDoc(doc(db, 'payments', paymentId), {
+          userId: user.uid,
+          linkedAt: Timestamp.now(),
+          updatedAt: Timestamp.now()
+        });
+        isLinked = true;
+        paymentData.userId = user.uid;
+        paymentData.linkedAt = new Date();
+      }
+    } catch (error) {
+      console.error('Error al buscar usuario para vincular:', error);
+      // Continue without linking - will happen when user registers
+    }
+
     return {
-      id: docRef.id,
-      ...paymentData
+      id: paymentId,
+      ...paymentData,
+      isLinked // Indicate if payment was linked to existing user
     };
   } catch (error) {
     console.error('Error al crear pago manual:', error);

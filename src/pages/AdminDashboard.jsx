@@ -189,36 +189,36 @@ export default function AdminDashboard() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-6">
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="text-sm text-gray-600 mb-1">Total Pagos</div>
-            <div className="text-3xl font-bold text-gray-900">{stats.total}</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-7 gap-3 md:gap-4">
+          <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
+            <div className="text-xs md:text-sm text-gray-600 mb-1">Total Pagos</div>
+            <div className="text-2xl md:text-3xl font-bold text-gray-900">{stats.total}</div>
           </div>
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="text-sm text-gray-600 mb-1">Aprobados</div>
-            <div className="text-3xl font-bold text-green-600">{stats.approved}</div>
+          <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
+            <div className="text-xs md:text-sm text-gray-600 mb-1">Aprobados</div>
+            <div className="text-2xl md:text-3xl font-bold text-green-600">{stats.approved}</div>
           </div>
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="text-sm text-gray-600 mb-1">Pendientes</div>
-            <div className="text-3xl font-bold text-yellow-600">{stats.pending}</div>
+          <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
+            <div className="text-xs md:text-sm text-gray-600 mb-1">Pendientes</div>
+            <div className="text-2xl md:text-3xl font-bold text-yellow-600">{stats.pending}</div>
           </div>
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="text-sm text-gray-600 mb-1">Rechazados</div>
-            <div className="text-3xl font-bold text-red-600">{stats.rejected}</div>
+          <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
+            <div className="text-xs md:text-sm text-gray-600 mb-1">Rechazados</div>
+            <div className="text-2xl md:text-3xl font-bold text-red-600">{stats.rejected}</div>
           </div>
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="text-sm text-gray-600 mb-1">Monto Total Recaudado</div>
-            <div className="text-2xl font-bold text-blue-600">${stats.totalAmount.toFixed(2)}</div>
+          <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
+            <div className="text-xs md:text-sm text-gray-600 mb-1">Monto Total Recaudado</div>
+            <div className="text-lg md:text-2xl font-bold text-blue-600 break-words">${stats.totalAmount.toFixed(2)}</div>
           </div>
-          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-500">
-            <div className="text-sm text-gray-600 mb-1">⏳ Pendiente de Validar</div>
-            <div className="text-3xl font-bold text-yellow-600">
+          <div className="bg-white rounded-lg shadow-md p-4 md:p-6 border-l-4 border-yellow-500">
+            <div className="text-xs md:text-sm text-gray-600 mb-1">⏳ Pendiente de Validar</div>
+            <div className="text-2xl md:text-3xl font-bold text-yellow-600 break-words">
               ${stats.pendingAmount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
           </div>
-          <div className={`bg-white rounded-lg shadow-md p-6 ${stats.availableMoney >= 0 ? 'border-l-4 border-green-500' : 'border-l-4 border-red-500'}`}>
-            <div className="text-sm text-gray-600 mb-1">💰 Dinero en Cuenta</div>
-            <div className={`text-3xl font-bold ${stats.availableMoney >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <div className={`bg-white rounded-lg shadow-md p-4 md:p-6 ${stats.availableMoney >= 0 ? 'border-l-4 border-green-500' : 'border-l-4 border-red-500'}`}>
+            <div className="text-xs md:text-sm text-gray-600 mb-1">💰 Dinero en Cuenta</div>
+            <div className={`text-2xl md:text-3xl font-bold break-words ${stats.availableMoney >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               ${Math.abs(stats.availableMoney).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
           </div>

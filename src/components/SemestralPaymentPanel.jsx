@@ -95,6 +95,19 @@ export default function SemestralPaymentPanel({ onPaymentCreated }) {
     setLoading(true);
 
     try {
+      // Upload receipt first if provided
+      let receiptUrl = null;
+      if (selectedFile) {
+        try {
+          receiptUrl = await uploadReceiptFile(selectedFile, parseInt(houseNumber));
+        } catch (uploadErr) {
+          console.error('Error al subir comprobante:', uploadErr);
+          setError(`Error al subir comprobante: ${uploadErr.message}`);
+          setLoading(false);
+          return;
+        }
+      }
+
       const paymentIds = await createSemestralPayment(
         parseInt(houseNumber),
         parseFloat(amount),
@@ -103,24 +116,9 @@ export default function SemestralPaymentPanel({ onPaymentCreated }) {
         parseInt(selectedYear),
         currentUser.uid,
         status,
-        adminNotes
+        adminNotes,
+        receiptUrl
       );
-
-      // Upload receipt if file was provided
-      if (selectedFile) {
-        try {
-          const receiptUrl = await uploadReceiptFile(selectedFile, parseInt(houseNumber));
-          // Update the receipt for the current month payment
-          const currentMonthPaymentId = paymentIds[selectedMonths.indexOf(currentMonth)];
-          if (currentMonthPaymentId) {
-            // Note: We're not updating here to keep it simple
-            // In a real scenario, you might want to update the payment with receipt
-          }
-        } catch (uploadErr) {
-          console.error('Error al subir comprobante:', uploadErr);
-          setError(`Pagos registrados pero error al subir comprobante: ${uploadErr.message}`);
-        }
-      }
 
       setSuccess(`✅ Pago semestral registrado para ${selectedMonths.length} meses`);
 

@@ -282,7 +282,7 @@ export const linkPaymentToUser = async (paymentId, userId) => {
  * Create semestral payments (6 months)
  * Distributes payment across selected months, only current month has the full amount
  */
-export const createSemestralPayment = async (houseNumber, amount, months, currentMonth, year, createdByUserId, Status = 'pending', adminNotes = '') => {
+export const createSemestralPayment = async (houseNumber, amount, months, currentMonth, year, createdByUserId, Status = 'pending', adminNotes = '', receiptUrl = null) => {
   try {
     const paymentIds = [];
     const note = `Pago semestral - ${adminNotes}`.trim();
@@ -313,7 +313,7 @@ export const createSemestralPayment = async (houseNumber, amount, months, curren
         isSemestral: true,
         semestralMonths: months,
         linkedAt: userId ? Timestamp.now() : null,
-        receiptUrl: null,
+        receiptUrl: receiptUrl, // Same receipt for all payments
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now()
       };
@@ -333,7 +333,7 @@ export const createSemestralPayment = async (houseNumber, amount, months, curren
  * Create annual payments (12 months)
  * Distributes payment across all 12 months, only current month has the full amount
  */
-export const createAnnualPayment = async (houseNumber, amount, currentMonth, year, createdByUserId, Status = 'pending', adminNotes = '') => {
+export const createAnnualPayment = async (houseNumber, amount, currentMonth, year, createdByUserId, Status = 'pending', adminNotes = '', receiptUrl = null) => {
   try {
     const paymentIds = [];
     const note = `Pago anual - ${adminNotes}`.trim();
@@ -363,7 +363,7 @@ export const createAnnualPayment = async (houseNumber, amount, currentMonth, yea
         manuallyCreated: true,
         isAnnual: true,
         linkedAt: userId ? Timestamp.now() : null,
-        receiptUrl: null,
+        receiptUrl: receiptUrl, // Same receipt for all payments
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now()
       };

@@ -79,6 +79,19 @@ export default function AnnualPaymentPanel({ onPaymentCreated }) {
     setLoading(true);
 
     try {
+      // Upload receipt first if provided
+      let receiptUrl = null;
+      if (selectedFile) {
+        try {
+          receiptUrl = await uploadReceiptFile(selectedFile, parseInt(houseNumber));
+        } catch (uploadErr) {
+          console.error('Error al subir comprobante:', uploadErr);
+          setError(`Error al subir comprobante: ${uploadErr.message}`);
+          setLoading(false);
+          return;
+        }
+      }
+
       const paymentIds = await createAnnualPayment(
         parseInt(houseNumber),
         parseFloat(amount),
@@ -86,19 +99,9 @@ export default function AnnualPaymentPanel({ onPaymentCreated }) {
         parseInt(selectedYear),
         currentUser.uid,
         status,
-        adminNotes
+        adminNotes,
+        receiptUrl
       );
-
-      // Upload receipt if file was provided
-      if (selectedFile) {
-        try {
-          const receiptUrl = await uploadReceiptFile(selectedFile, parseInt(houseNumber));
-          // The receipt URL could be associated with the current month payment
-        } catch (uploadErr) {
-          console.error('Error al subir comprobante:', uploadErr);
-          setError(`Pagos registrados pero error al subir comprobante: ${uploadErr.message}`);
-        }
-      }
 
       setSuccess('✅ Pago anual registrado para los 12 meses');
 

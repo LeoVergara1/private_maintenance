@@ -69,7 +69,7 @@ export default function ManualPaymentPanel({ onPaymentCreated }) {
       return;
     }
 
-    if (!amount || parseFloat(amount) <= 0) {
+    if (amount === '' || parseFloat(amount) < 0) {
       setError('Por favor ingresa un monto válido');
       return;
     }
@@ -212,7 +212,7 @@ export default function ManualPaymentPanel({ onPaymentCreated }) {
                 id="amount"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                min="1"
+                min="0"
                 step="0.01"
                 disabled={loading}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"

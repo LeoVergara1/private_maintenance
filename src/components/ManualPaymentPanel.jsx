@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../config/firebase';
 
-export default function ManualPaymentPanel() {
+export default function ManualPaymentPanel({ onPaymentCreated }) {
   const { currentUser } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -114,6 +114,10 @@ export default function ManualPaymentPanel() {
       setTimeout(() => {
         setSuccess('');
         setShowForm(false);
+        // Reload payments table
+        if (onPaymentCreated) {
+          onPaymentCreated();
+        }
       }, 3000);
     } catch (err) {
       console.error('Error al registrar pago manual:', err);

@@ -231,13 +231,13 @@ export default function AdminDashboard() {
         <UnregisteredHousesPanel />
 
         {/* Manual Payment Panel */}
-        <ManualPaymentPanel />
+        <ManualPaymentPanel onPaymentCreated={loadPayments} />
 
         {/* Expenses Panel */}
-        <ExpensesPanel />
+        <ExpensesPanel onExpenseCreated={loadPayments} />
 
         {/* Initial Deposit Panel */}
-        <InitialDepositPanel />
+        <InitialDepositPanel onDepositCreated={loadPayments} />
 
         {/* Filters and Export */}
         <div className="bg-white rounded-lg shadow-md p-6">

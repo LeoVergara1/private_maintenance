@@ -6,7 +6,7 @@ import { validateFile } from '../utils/fileValidation';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../config/firebase';
 
-export default function InitialDepositPanel() {
+export default function InitialDepositPanel({ onDepositCreated }) {
   const { currentUser } = useAuth();
   const [amount, setAmount] = useState('');
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
@@ -81,6 +81,10 @@ export default function InitialDepositPanel() {
       setTimeout(() => {
         setSuccess('');
         setShowForm(false);
+        // Reload admin dashboard data
+        if (onDepositCreated) {
+          onDepositCreated();
+        }
       }, 3000);
     } catch (err) {
       console.error('Error al registrar abono:', err);
@@ -96,7 +100,13 @@ export default function InitialDepositPanel() {
         await deleteInitialDeposit(depositId);
         setSuccess('Abono eliminado correctamente');
         await loadDeposits();
-        setTimeout(() => setSuccess(''), 3000);
+        setTimeout(() => {
+          setSuccess('');
+          // Reload admin dashboard data
+          if (onDepositCreated) {
+            onDepositCreated();
+          }
+        }, 3000);
       } catch (err) {
         console.error('Error al eliminar abono:', err);
         setError(`Error al eliminar: ${err.message}`);

@@ -4,7 +4,7 @@ import { createExpense, uploadExpenseReceipt, deleteExpense, getExpensesByYear, 
 import { getCurrentMonth, getCurrentYear, getMonthName } from '../utils/dateValidation';
 import { validateFile } from '../utils/fileValidation';
 
-export default function ExpensesPanel() {
+export default function ExpensesPanel({ onExpenseCreated }) {
   const { currentUser } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [expenses, setExpenses] = useState([]);
@@ -99,7 +99,13 @@ export default function ExpensesPanel() {
       loadExpenses();
 
       // Clear success message after 3 seconds
-      setTimeout(() => setSuccess(''), 3000);
+      setTimeout(() => {
+        setSuccess('');
+        // Reload admin dashboard data
+        if (onExpenseCreated) {
+          onExpenseCreated();
+        }
+      }, 3000);
     } catch (err) {
       console.error('Error al registrar el gasto:', err);
       setError(`Error al registrar el gasto: ${err.message}`);
@@ -127,7 +133,13 @@ export default function ExpensesPanel() {
         await deleteExpense(expenseId, receiptUrl);
         setSuccess('Gasto eliminado exitosamente');
         loadExpenses();
-        setTimeout(() => setSuccess(''), 3000);
+        setTimeout(() => {
+          setSuccess('');
+          // Reload admin dashboard data
+          if (onExpenseCreated) {
+            onExpenseCreated();
+          }
+        }, 3000);
       } catch (err) {
         console.error('Error al eliminar gasto:', err);
         setError('Error al eliminar el gasto');

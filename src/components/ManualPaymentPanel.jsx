@@ -21,6 +21,8 @@ export default function ManualPaymentPanel({ onPaymentCreated }) {
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
   const [selectedYear, setSelectedYear] = useState(getCurrentYear());
   const [isLate, setIsLate] = useState(false);
+  const [status, setStatus] = useState('pending');
+  const [adminNotes, setAdminNotes] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
 
   // Load all payments when component mounts
@@ -83,7 +85,9 @@ export default function ManualPaymentPanel({ onPaymentCreated }) {
         parseInt(selectedMonth),
         parseInt(selectedYear),
         currentUser.uid,
-        isLate
+        isLate,
+        status,
+        adminNotes
       );
 
       // Upload receipt if file was provided
@@ -109,6 +113,8 @@ export default function ManualPaymentPanel({ onPaymentCreated }) {
       setSelectedMonth(getCurrentMonth());
       setSelectedYear(getCurrentYear());
       setIsLate(false);
+      setStatus('pending');
+      setAdminNotes('');
       setSelectedFile(null);
 
       setTimeout(() => {
@@ -267,6 +273,38 @@ export default function ManualPaymentPanel({ onPaymentCreated }) {
             <label htmlFor="isLate" className="text-sm font-medium text-gray-700">
               Marcar como pago tardío
             </label>
+          </div>
+
+          <div>
+            <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
+              Estado del Pago
+            </label>
+            <select
+              id="status"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              disabled={loading}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+            >
+              <option value="pending">Pendiente</option>
+              <option value="approved">Aprobado</option>
+              <option value="rejected">Rechazado</option>
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="adminNotes" className="block text-sm font-medium text-gray-700 mb-2">
+              Notas del Administrador (Opcional)
+            </label>
+            <textarea
+              id="adminNotes"
+              value={adminNotes}
+              onChange={(e) => setAdminNotes(e.target.value)}
+              rows={3}
+              disabled={loading}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none disabled:bg-gray-100"
+              placeholder="Agregar comentarios o razón del rechazo..."
+            />
           </div>
 
           {duplicateWarning && duplicateWarning.exists && (

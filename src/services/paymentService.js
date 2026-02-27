@@ -183,7 +183,7 @@ export const updatePaymentStatus = async (paymentId, updates) => {
  * Automatically links to user if they're already registered
  * If not registered yet, payment stays with userId: null until user registers
  */
-export const createManualPayment = async (houseNumber, amount, month, year, createdByUserId, isLate = false) => {
+export const createManualPayment = async (houseNumber, amount, month, year, createdByUserId, isLate = false, status = 'pending', adminNotes = '') => {
   try {
     const paymentData = {
       houseNumber,
@@ -193,7 +193,8 @@ export const createManualPayment = async (houseNumber, amount, month, year, crea
       userId: null, // Initially null
       createdBy: createdByUserId, // Track which admin created this
       isLate,
-      status: 'pending',
+      status, // Use provided status
+      adminNotes: adminNotes.trim(), // Add admin notes
       manuallyCreated: true,
       linkedAt: null, // Will be set when linked to user
       receiptUrl: null,

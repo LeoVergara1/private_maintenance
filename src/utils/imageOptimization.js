@@ -1,9 +1,23 @@
 /**
- * Optimizar imágenes antes de subir
- * Reduce tamaño significativamente
+ * Detectar si un archivo es imagen
  */
+const isImageFile = (file) => {
+  const imageTypes = ['image/jpeg', 'image/png', 'image/heic', 'image/webp'];
+  const imageExtensions = ['.jpg', '.jpeg', '.png', '.heic', '.webp'];
+  const ext = '.' + file.name.split('.').pop().toLowerCase();
+  return imageTypes.includes(file.type) || imageExtensions.includes(ext);
+};
 
+/**
+ * Optimizar imágenes antes de subir
+ * Reduce tamaño significativamente sin cambiar formato
+ */
 export const compressImage = async (file, maxWidth = 1920, maxHeight = 1080, quality = 0.8) => {
+  // Solo comprimir si es imagen
+  if (!isImageFile(file)) {
+    return file;
+  }
+
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
@@ -33,18 +47,27 @@ export const compressImage = async (file, maxWidth = 1920, maxHeight = 1080, qua
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
 
+        // Usar JPEG para mejor compresión de capturas
         canvas.toBlob(
-          (blob) => resolve(blob),
+          (blob) => {
+            // Crear un nuevo archivo con el blob comprimido
+            const compressedFile = new File(
+              [blob],
+              file.name.replace(/\.[^/.]+$/, '.jpg'), // Cambiar extensión a .jpg
+              { type: 'image/jpeg' }
+            );
+            resolve(compressedFile);
+          },
           'image/jpeg',
           quality
         );
       };
 
-      img.onerror = () => reject(new Error('Error loading image'));
+      img.onerror = () => reject(new Error('Error cargando imagen'));
       img.src = event.target.result;
     };
 
-    reader.onerror = () => reject(new Error('Error reading file'));
+    reader.onerror = () => reject(new Error('Error leyendo archivo'));
     reader.readAsDataURL(file);
   });
 };

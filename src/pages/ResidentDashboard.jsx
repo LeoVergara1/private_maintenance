@@ -13,6 +13,7 @@ import {
   getMonthName 
 } from '../utils/dateValidation';
 import { validateFile } from '../utils/fileValidation';
+import { compressImage, formatFileSize } from '../utils/imageOptimization';
 import { generateReceiptNumber } from '../utils/receiptGenerator';
 import ReceiptModal from '../components/ReceiptModal';
 import PaymentConfirmationModal from '../components/PaymentConfirmationModal';
@@ -67,7 +68,7 @@ export default function ResidentDashboard() {
     }
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
       const validation = validateFile(file);
@@ -76,8 +77,28 @@ export default function ResidentDashboard() {
         setSelectedFile(null);
         return;
       }
-      setSelectedFile(file);
+
       setError('');
+
+      // Comprimir si pesa más de 200KB
+      if (file.size > 200 * 1024) {
+        try {
+          const originalSize = formatFileSize(file.size);
+          const compressedFile = await compressImage(file, 1920, 1080, 0.7);
+          const compressedSize = formatFileSize(compressedFile.size);
+          
+          setSelectedFile(compressedFile);
+          setSuccess(`Imagen comprimida: ${originalSize} → ${compressedSize}`);
+          // Clear success message after 3 seconds
+          setTimeout(() => setSuccess(''), 3000);
+        } catch (error) {
+          console.error('Error al comprimir imagen:', error);
+          setError('Error al comprimir la imagen. Por favor intenta de nuevo.');
+          setSelectedFile(null);
+        }
+      } else {
+        setSelectedFile(file);
+      }
     }
   };
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { updatePaymentStatus } from '../services/paymentService';
 import { validateFile } from '../utils/fileValidation';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -12,6 +12,18 @@ export default function PaymentStatusModal({ isOpen, onClose, payment, onUpdate 
   const [error, setError] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileError, setFileError] = useState('');
+
+  // Update form when payment changes
+  useEffect(() => {
+    if (payment) {
+      setStatus(payment.status || 'pending');
+      setAmount(payment.amount || 300);
+      setAdminNotes(payment.adminNotes || '');
+      setSelectedFile(null);
+      setFileError('');
+      setError('');
+    }
+  }, [payment, isOpen]);
 
   if (!isOpen || !payment) return null;
 

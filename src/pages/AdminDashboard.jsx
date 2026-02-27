@@ -30,6 +30,8 @@ export default function AdminDashboard() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterHouse, setFilterHouse] = useState('');
   const [filterMonth, setFilterMonth] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const currentYear = getCurrentYear();
 
@@ -39,6 +41,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     applyFilters();
+    setCurrentPage(1); // Reset page when filters change
   }, [payments, filterStatus, filterHouse, filterMonth]);
 
   const loadPayments = async () => {
@@ -158,6 +161,12 @@ export default function AdminDashboard() {
   };
 
   const stats = getStats();
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredPayments.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedPayments = filteredPayments.slice(startIndex, endIndex);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -331,7 +340,7 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredPayments.map((payment) => (
+                  {paginatedPayments.map((payment) => (
                     <tr key={payment.id} className="hover:bg-gray-50">
                       <td className="px-4 py-4 whitespace-nowrap">
                         <span className="font-semibold text-gray-900">
@@ -383,6 +392,48 @@ export default function AdminDashboard() {
               </table>
             )}
           </div>
+
+          {/* Pagination */}
+          {filteredPayments.length > 0 && (
+            <div className="flex items-center justify-between mt-4 px-4 py-3 bg-gray-50 border-t border-gray-200">
+              <div className="text-sm text-gray-600">
+                Mostrando {startIndex + 1} a {Math.min(endIndex, filteredPayments.length)} de {filteredPayments.length} pagos
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ← Anterior
+                </button>
+                
+                <div className="flex gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium ${
+                        currentPage === page
+                          ? 'bg-blue-600 text-white'
+                          : 'border border-gray-300 text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+                
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Siguiente →
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </main>
 

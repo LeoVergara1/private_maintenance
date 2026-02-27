@@ -54,8 +54,8 @@ export default function AnnualPaymentPanel({ onPaymentCreated }) {
   const uploadReceiptFile = async (file, houseNumber) => {
     const timestamp = Date.now();
     const fileExtension = file.name.split('.').pop();
-    const fileName = `${houseNumber}-${timestamp}.${fileExtension}`;
-    const storageRef = ref(storage, `receipts/annual/${houseNumber}/${fileName}`);
+    const fileName = `${houseNumber}-anual-${timestamp}.${fileExtension}`;
+    const storageRef = ref(storage, `receipts/manual/${houseNumber}/${fileName}`);
     
     await uploadBytes(storageRef, file);
     return await getDownloadURL(storageRef);

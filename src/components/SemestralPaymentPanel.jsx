@@ -65,8 +65,8 @@ export default function SemestralPaymentPanel({ onPaymentCreated }) {
   const uploadReceiptFile = async (file, houseNumber) => {
     const timestamp = Date.now();
     const fileExtension = file.name.split('.').pop();
-    const fileName = `${houseNumber}-${timestamp}.${fileExtension}`;
-    const storageRef = ref(storage, `receipts/semestral/${houseNumber}/${fileName}`);
+    const fileName = `${houseNumber}-semestral-${timestamp}.${fileExtension}`;
+    const storageRef = ref(storage, `receipts/manual/${houseNumber}/${fileName}`);
     
     await uploadBytes(storageRef, file);
     return await getDownloadURL(storageRef);

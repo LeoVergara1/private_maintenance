@@ -13,10 +13,17 @@ service cloud.firestore {
     }
     
     function isAdmin() {
-      // NOTE: Simplified to reduce reads. Store admin status in auth claims or use frontend logic
+      // Simplified: Check if user has manually created payments (admin flag)
+      // or if role is admin in user document
       return isAuthenticated() && 
-             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+             (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+    }
+
+    // Check if creating an admin payment (manual, semestral, annual)
+    function isAdminPayment() {
+      return request.resource.data.manuallyCreated == true &&
+             request.resource.data.createdBy != null;
     }
     
     // Users collection rules
@@ -43,10 +50,10 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       
       // Users can create payments for themselves
-      // Admins can create payments for anyone (manual, semestral, annual)
+      // Admins can create admin payments (manual, semestral, annual with manuallyCreated flag)
       allow create: if isAuthenticated() && 
                        (request.resource.data.userId == request.auth.uid || 
-                        isAdmin());
+                        (isAdminPayment() && isAdmin()));
       
       // Only admins can update payments
       allow update: if isAdmin();

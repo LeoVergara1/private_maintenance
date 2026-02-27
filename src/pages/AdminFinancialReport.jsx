@@ -209,7 +209,7 @@ export default function AdminFinancialReport() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
             <div className="bg-white rounded-lg shadow p-4 md:p-6">
               <p className="text-xs md:text-sm font-medium text-gray-600">Total Recaudado</p>
-              <p className="text-lg md:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mt-2 break-words">
+              <p className="text-3xl md:text-2xl xl:text-3xl font-bold text-gray-900 mt-2 break-words">
                 ${formatCurrency(
                   monthlyReport[selectedMonth].totalCollected + 
                   monthInitialDeposits.reduce((sum, dep) => sum + dep.amount, 0)
@@ -219,28 +219,28 @@ export default function AdminFinancialReport() {
 
             <div className="bg-white rounded-lg shadow p-4 md:p-6">
               <p className="text-xs md:text-sm font-medium text-gray-600">Pagos a Tiempo</p>
-              <p className="text-lg md:text-xl lg:text-2xl xl:text-3xl font-bold text-green-600 mt-2 break-words">
+              <p className="text-3xl md:text-2xl xl:text-3xl font-bold text-green-600 mt-2 break-words">
                 {monthlyReport[selectedMonth].onTimePayments}
               </p>
             </div>
 
             <div className="bg-white rounded-lg shadow p-4 md:p-6">
               <p className="text-xs md:text-sm font-medium text-gray-600">Pagos Tardíos</p>
-              <p className="text-lg md:text-xl lg:text-2xl xl:text-3xl font-bold text-orange-600 mt-2 break-words">
+              <p className="text-3xl md:text-2xl xl:text-3xl font-bold text-orange-600 mt-2 break-words">
                 {monthlyReport[selectedMonth].latePayments}
               </p>
             </div>
 
             <div className="bg-white rounded-lg shadow p-4 md:p-6">
               <p className="text-xs md:text-sm font-medium text-gray-600">Casas Totales</p>
-              <p className="text-lg md:text-xl lg:text-2xl xl:text-3xl font-bold text-blue-600 mt-2 break-words">
+              <p className="text-3xl md:text-2xl xl:text-3xl font-bold text-blue-600 mt-2 break-words">
                 {allHouses.length}
               </p>
             </div>
 
             <div className="bg-white rounded-lg shadow p-4 md:p-6">
               <p className="text-xs md:text-sm font-medium text-gray-600">Total Gastos</p>
-              <p className="text-lg md:text-xl lg:text-2xl xl:text-3xl font-bold text-red-600 mt-2 break-words">
+              <p className="text-3xl md:text-2xl xl:text-3xl font-bold text-red-600 mt-2 break-words">
                 ${formatCurrency(monthExpenses.reduce((sum, exp) => sum + exp.amount, 0))}
               </p>
             </div>
@@ -251,7 +251,7 @@ export default function AdminFinancialReport() {
                 : 'border-l-4 border-red-500'
             }`}>
               <p className="text-xs md:text-sm font-medium text-gray-600">💰 Dinero en Cuenta (Año)</p>
-              <p className={`text-lg md:text-xl lg:text-2xl xl:text-3xl font-bold mt-2 break-words ${
+              <p className={`text-3xl md:text-2xl xl:text-3xl font-bold mt-2 break-words ${
                 (allPayments.filter(p => p.status === 'approved').reduce((sum, p) => sum + p.amount, 0) + yearInitialDeposits.reduce((sum, dep) => sum + dep.amount, 0) - yearExpenses.reduce((sum, exp) => sum + exp.amount, 0)) >= 0
                   ? 'text-green-600'
                   : 'text-red-600'

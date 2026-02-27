@@ -32,6 +32,7 @@ export default function ResidentDashboard() {
   const [hasPaidThisMonth, setHasPaidThisMonth] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState(null);
   const [confirmationData, setConfirmationData] = useState(null);
+  const [viewingReceiptPayment, setViewingReceiptPayment] = useState(null);
 
   const currentMonth = getCurrentMonth();
   const currentYear = getCurrentYear();
@@ -384,18 +385,33 @@ export default function ResidentDashboard() {
                       <p className="text-gray-600">
                         <span className="font-medium">Tardío:</span> {payment.isLate ? 'Sí' : 'No'}
                       </p>
+                      {payment.receiptNumber && (
+                        <p className="text-gray-600">
+                          <span className="font-medium">Recibo #:</span> {payment.receiptNumber}
+                        </p>
+                      )}
                       {payment.adminNotes && (
                         <p className="text-gray-600">
                           <span className="font-medium">Notas:</span> {payment.adminNotes}
                         </p>
                       )}
                     </div>
-                    <button
-                      onClick={() => setSelectedReceipt({ url: payment.receiptUrl, fileName: '' })}
-                      className="mt-3 text-blue-600 hover:text-blue-700 text-sm font-medium"
-                    >
-                      Ver Comprobante →
-                    </button>
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        onClick={() => setSelectedReceipt({ url: payment.receiptUrl, fileName: '' })}
+                        className="flex-1 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                      >
+                        Ver Comprobante →
+                      </button>
+                      {payment.receiptNumber && (
+                        <button
+                          onClick={() => setViewingReceiptPayment(payment)}
+                          className="flex-1 text-green-600 hover:text-green-700 text-sm font-medium"
+                        >
+                          Ver Recibo →
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -417,6 +433,21 @@ export default function ResidentDashboard() {
         isOpen={!!confirmationData}
         onClose={handleConfirmationModalClose}
         paymentData={confirmationData}
+      />
+
+      {/* View Receipt Modal */}
+      <PaymentConfirmationModal
+        isOpen={!!viewingReceiptPayment}
+        onClose={() => setViewingReceiptPayment(null)}
+        paymentData={viewingReceiptPayment ? {
+          houseNumber: viewingReceiptPayment.houseNumber,
+          amount: viewingReceiptPayment.amount,
+          month: viewingReceiptPayment.month,
+          year: viewingReceiptPayment.year,
+          isLate: viewingReceiptPayment.isLate,
+          receiptNumber: viewingReceiptPayment.receiptNumber,
+          createdAt: viewingReceiptPayment.createdAt
+        } : null}
       />
     </div>
   );

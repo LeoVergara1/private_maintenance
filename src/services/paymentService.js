@@ -277,3 +277,104 @@ export const linkPaymentToUser = async (paymentId, userId) => {
     throw error;
   }
 };
+
+/**
+ * Create semestral payments (6 months)
+ * Distributes payment across selected months, only current month has the full amount
+ */
+export const createSemestralPayment = async (houseNumber, amount, months, currentMonth, year, createdByUserId, Status = 'pending', adminNotes = '') => {
+  try {
+    const paymentIds = [];
+    const note = `Pago semestral - ${adminNotes}`.trim();
+    
+    // Try to get user for this house
+    let userId = null;
+    try {
+      const user = await getUserByHouseNumber(houseNumber);
+      if (user && user.uid) {
+        userId = user.uid;
+      }
+    } catch (error) {
+      console.error('Error al buscar usuario:', error);
+    }
+
+    // Create payment for each selected month
+    for (const month of months) {
+      const paymentData = {
+        houseNumber,
+        amount: month === currentMonth ? amount : 0, // Only current month has the full amount
+        month,
+        year,
+        userId,
+        createdBy: createdByUserId,
+        status: Status,
+        adminNotes: note,
+        manuallyCreated: true,
+        isSemestral: true,
+        semestralMonths: months,
+        linkedAt: userId ? Timestamp.now() : null,
+        receiptUrl: null,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now()
+      };
+
+      const docRef = await addDoc(collection(db, 'payments'), paymentData);
+      paymentIds.push(docRef.id);
+    }
+
+    return paymentIds;
+  } catch (error) {
+    console.error('Error al crear pago semestral:', error);
+    throw error;
+  }
+};
+
+/**
+ * Create annual payments (12 months)
+ * Distributes payment across all 12 months, only current month has the full amount
+ */
+export const createAnnualPayment = async (houseNumber, amount, currentMonth, year, createdByUserId, Status = 'pending', adminNotes = '') => {
+  try {
+    const paymentIds = [];
+    const note = `Pago anual - ${adminNotes}`.trim();
+    
+    // Try to get user for this house
+    let userId = null;
+    try {
+      const user = await getUserByHouseNumber(houseNumber);
+      if (user && user.uid) {
+        userId = user.uid;
+      }
+    } catch (error) {
+      console.error('Error al buscar usuario:', error);
+    }
+
+    // Create payment for each month of the year
+    for (let month = 1; month <= 12; month++) {
+      const paymentData = {
+        houseNumber,
+        amount: month === currentMonth ? amount : 0, // Only current month has the full amount
+        month,
+        year,
+        userId,
+        createdBy: createdByUserId,
+        status: Status,
+        adminNotes: note,
+        manuallyCreated: true,
+        isAnnual: true,
+        linkedAt: userId ? Timestamp.now() : null,
+        receiptUrl: null,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now()
+      };
+
+      const docRef = await addDoc(collection(db, 'payments'), paymentData);
+      paymentIds.push(docRef.id);
+    }
+
+    return paymentIds;
+  } catch (error) {
+    console.error('Error al crear pago anual:', error);
+    throw error;
+  }
+};

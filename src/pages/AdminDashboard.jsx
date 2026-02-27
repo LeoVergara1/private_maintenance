@@ -12,6 +12,8 @@ import UnpaidHousesPanel from '../components/UnpaidHousesPanel';
 import UnregisteredHousesPanel from '../components/UnregisteredHousesPanel';
 import ExpensesPanel from '../components/ExpensesPanel';
 import ManualPaymentPanel from '../components/ManualPaymentPanel';
+import SemestralPaymentPanel from '../components/SemestralPaymentPanel';
+import AnnualPaymentPanel from '../components/AnnualPaymentPanel';
 import InitialDepositPanel from '../components/InitialDepositPanel';
 
 export default function AdminDashboard() {
@@ -241,6 +243,12 @@ export default function AdminDashboard() {
 
         {/* Manual Payment Panel */}
         <ManualPaymentPanel onPaymentCreated={loadPayments} />
+
+        {/* Semestral Payment Panel */}
+        <SemestralPaymentPanel onPaymentCreated={loadPayments} />
+
+        {/* Annual Payment Panel */}
+        <AnnualPaymentPanel onPaymentCreated={loadPayments} />
 
         {/* Expenses Panel */}
         <ExpensesPanel onExpenseCreated={loadPayments} />

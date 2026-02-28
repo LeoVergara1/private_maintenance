@@ -33,7 +33,7 @@ export default function AdminDashboard() {
   const [filterHouse, setFilterHouse] = useState('');
   const [filterMonth, setFilterMonth] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 12;
 
   const currentYear = getCurrentYear();
 

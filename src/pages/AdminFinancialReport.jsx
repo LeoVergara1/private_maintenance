@@ -477,7 +477,7 @@ export default function AdminFinancialReport() {
                       <span className="inline-flex items-center justify-center w-6 h-6 bg-red-100 rounded-full mr-3">
                         <span className="text-red-600 font-bold">✕</span>
                       </span>
-                      Casas que NO Pagaron ({monthlyReport[selectedMonth].unpaid.length})
+                      Pendientes de pago ({monthlyReport[selectedMonth].unpaid.length})
                     </h3>
 
                     <div className="overflow-x-auto">

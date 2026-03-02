@@ -359,7 +359,7 @@ export default function AdminDashboard() {
                         {getMonthName(payment.month)} {payment.year}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        ${payment.amount}
+                        {payment.amount === 0 ? '-' : `$${payment.amount}`}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap">
                         {getStatusBadge(payment.status)}

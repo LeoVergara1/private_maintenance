@@ -380,7 +380,7 @@ export default function ResidentDashboard() {
                     </div>
                     <div className="space-y-1 text-sm">
                       <p className="text-gray-600">
-                        <span className="font-medium">Monto:</span> ${payment.amount}
+                        <span className="font-medium">Monto:</span> {payment.amount === 0 ? '-' : `$${payment.amount}`}
                       </p>
                       <p className="text-gray-600">
                         <span className="font-medium">Tardío:</span> {payment.isLate ? 'Sí' : 'No'}

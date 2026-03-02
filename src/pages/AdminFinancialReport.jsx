@@ -440,7 +440,7 @@ export default function AdminFinancialReport() {
                           {monthlyReport[selectedMonth].paid.map((payment, idx) => (
                             <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50">
                               <td className="px-4 py-3 font-medium text-gray-900">#{payment.houseNumber}</td>
-                              <td className="px-4 py-3 text-gray-700">${formatCurrency(payment.amount)}</td>
+                              <td className="px-4 py-3 text-gray-700">{payment.amount === 0 ? '-' : `$${formatCurrency(payment.amount)}`}</td>
                               <td className="px-4 py-3">
                                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                                   payment.status === 'approved' ? 'bg-green-100 text-green-800' :

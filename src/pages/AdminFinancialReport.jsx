@@ -69,6 +69,7 @@ export default function AdminFinancialReport() {
 
   const generateReport = (payments, residents) => {
     const report = {};
+    const TOTAL_HOUSES = 60; // Total de casas en la comunidad
 
     // Initialize all months
     for (let month = 1; month <= 12; month++) {
@@ -78,45 +79,63 @@ export default function AdminFinancialReport() {
         totalCollected: 0,
         paid: [],
         unpaid: [],
+        uniquePaidHouses: 0,
         onTimePayments: 0,
         latePayments: 0
       };
     }
 
-    // Process payments
-    payments.forEach(payment => {
-      if (payment.month && report[payment.month]) {
-        report[payment.month].paid.push({
-          houseNumber: payment.houseNumber,
-          amount: payment.amount,
-          isLate: payment.isLate,
-          status: payment.status
-        });
-        
-        // Only count approved payments in totalCollected (like AdminDashboard)
-        if (payment.status === 'approved') {
-          report[payment.month].totalCollected += payment.amount;
-        }
-
-        if (payment.isLate) {
-          report[payment.month].latePayments++;
-        } else {
-          report[payment.month].onTimePayments++;
-        }
-      }
-    });
-
-    // Find unpaid houses for each month
-    Object.keys(report).forEach(month => {
-      const paidHouses = new Set(report[month].paid.map(p => p.houseNumber));
-      
-      residents.forEach(resident => {
-        if (!paidHouses.has(resident.houseNumber)) {
-          report[month].unpaid.push({
-            houseNumber: resident.houseNumber
+    // Process payments - Filter out invalid house numbers (only 1-60)
+    payments
+      .filter(payment => payment.houseNumber >= 1 && payment.houseNumber <= TOTAL_HOUSES)
+      .forEach(payment => {
+        if (payment.month && report[payment.month]) {
+          report[payment.month].paid.push({
+            houseNumber: payment.houseNumber,
+            amount: payment.amount,
+            isLate: payment.isLate,
+            status: payment.status
           });
+          
+          // Only count approved payments in totalCollected (like AdminDashboard)
+          if (payment.status === 'approved') {
+            report[payment.month].totalCollected += payment.amount;
+          }
         }
       });
+
+    // Calculate on-time and late payments for each month (count unique houses)
+    Object.keys(report).forEach(month => {
+      const onTimeHouses = new Set();
+      const lateHouses = new Set();
+      
+      report[month].paid.forEach(payment => {
+        if (payment.isLate) {
+          lateHouses.add(payment.houseNumber);
+        } else {
+          onTimeHouses.add(payment.houseNumber);
+        }
+      });
+      
+      report[month].onTimePayments = onTimeHouses.size;
+      report[month].latePayments = lateHouses.size;
+    });
+
+    // Find unpaid houses for each month - Show all 60 houses
+    Object.keys(report).forEach(month => {
+      const paidHouses = new Set(report[month].paid.map(p => p.houseNumber));
+      report[month].uniquePaidHouses = paidHouses.size;
+      
+      // Add all houses from 1 to 60 that haven't paid
+      for (let houseNumber = 1; houseNumber <= TOTAL_HOUSES; houseNumber++) {
+        if (!paidHouses.has(houseNumber)) {
+          const resident = residents.find(r => r.houseNumber === houseNumber);
+          report[month].unpaid.push({
+            houseNumber,
+            isRegistered: !!resident
+          });
+        }
+      }
     });
 
     setMonthlyReport(report);
@@ -420,7 +439,7 @@ export default function AdminFinancialReport() {
                     <span className="inline-flex items-center justify-center w-6 h-6 bg-green-100 rounded-full mr-3">
                       <span className="text-green-600 font-bold">✓</span>
                     </span>
-                    Casas que Pagaron ({monthlyReport[selectedMonth].paid.length})
+                    Casas que Pagaron ({monthlyReport[selectedMonth].uniquePaidHouses})
                   </h3>
 
                   {monthlyReport[selectedMonth].paid.length === 0 ? (
@@ -485,6 +504,7 @@ export default function AdminFinancialReport() {
                         <thead>
                           <tr className="border-b border-gray-200">
                             <th className="text-left px-4 py-2 bg-gray-50 font-medium text-gray-700">Casa</th>
+                            <th className="text-left px-4 py-2 bg-gray-50 font-medium text-gray-700">Estado</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -494,6 +514,17 @@ export default function AdminFinancialReport() {
                                 <span className="inline-flex items-center px-3 py-1 rounded-full bg-red-100 text-red-800 text-sm font-medium">
                                   Casa #{house.houseNumber}
                                 </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                {house.isRegistered ? (
+                                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-medium">
+                                    ✓ Registrada
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-gray-200 text-gray-800 text-xs font-medium">
+                                    ⚠ Sin registrar
+                                  </span>
+                                )}
                               </td>
                             </tr>
                           ))}

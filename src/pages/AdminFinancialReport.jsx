@@ -6,6 +6,7 @@ import { getExpensesByMonth, getExpensesByYear } from '../services/expensesServi
 import { getInitialDepositsByMonthYear, getInitialDepositsByYear } from '../services/initialDepositService';
 import { getAllUsers } from '../services/userService';
 import { getCurrentYear, getMonthName } from '../utils/dateValidation';
+import { TOTAL_HOUSES } from '../config/constants';
 
 export default function AdminFinancialReport() {
   const { signOut, userData } = useAuth();
@@ -69,7 +70,6 @@ export default function AdminFinancialReport() {
 
   const generateReport = (payments, residents) => {
     const report = {};
-    const TOTAL_HOUSES = 60; // Total de casas en la comunidad
 
     // Initialize all months
     for (let month = 1; month <= 12; month++) {
@@ -252,6 +252,12 @@ export default function AdminFinancialReport() {
 
             <div className="bg-white rounded-lg shadow p-4 md:p-6">
               <p className="text-xs md:text-sm font-medium text-gray-600">Casas Totales</p>
+              <p className="text-3xl md:text-2xl xl:text-3xl font-bold text-blue-600 mt-2 break-words">
+                {TOTAL_HOUSES}
+              </p>
+            </div>
+            <div className="bg-white rounded-lg shadow p-4 md:p-6">
+              <p className="text-xs md:text-sm font-medium text-gray-600">Casas con Registro</p>
               <p className="text-3xl md:text-2xl xl:text-3xl font-bold text-blue-600 mt-2 break-words">
                 {allHouses.length}
               </p>

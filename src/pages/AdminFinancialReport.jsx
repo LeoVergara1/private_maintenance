@@ -249,6 +249,12 @@ export default function AdminFinancialReport() {
                 {monthlyReport[selectedMonth].latePayments}
               </p>
             </div>
+            <div className="bg-white rounded-lg shadow p-4 md:p-6 border-l-4 border-red-500">
+              <p className="text-xs md:text-sm font-medium text-gray-600">Casas por Pagar</p>
+              <p className="text-3xl md:text-2xl xl:text-3xl font-bold text-red-600 mt-2 break-words">
+                {monthlyReport[selectedMonth]?.unpaid.length || 0}
+              </p>
+            </div>
 
             <div className="bg-white rounded-lg shadow p-4 md:p-6">
               <p className="text-xs md:text-sm font-medium text-gray-600">Casas Totales</p>
@@ -284,6 +290,7 @@ export default function AdminFinancialReport() {
                 ${formatCurrency(Math.abs(allPayments.filter(p => p.status === 'approved').reduce((sum, p) => sum + p.amount, 0) + yearInitialDeposits.reduce((sum, dep) => sum + dep.amount, 0) - yearExpenses.reduce((sum, exp) => sum + exp.amount, 0)))}
               </p>
             </div>
+
           </div>
         )}
 

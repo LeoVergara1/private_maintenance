@@ -6,6 +6,7 @@ import Onboarding from './pages/Onboarding';
 import ResidentDashboard from './pages/ResidentDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminFinancialReport from './pages/AdminFinancialReport';
+import GateControlsPage from './pages/GateControlsPage';
 
 function AppRoutes() {
   const { currentUser, userData, loading } = useAuth();
@@ -25,7 +26,7 @@ function AppRoutes() {
         path="/login" 
         element={
           currentUser ? (
-            <Navigate to={userData ? (userData.role === 'admin' ? '/admin' : '/dashboard') : '/onboarding'} replace />
+            <Navigate to={userData ? (userData.role === 'admin' ? '/admin' : userData.role === 'gate_manager' ? '/gate-controls' : '/dashboard') : '/onboarding'} replace />
           ) : (
             <Login />
           )
@@ -38,7 +39,7 @@ function AppRoutes() {
         element={
           <ProtectedRoute requireOnboarding={false}>
             {userData ? (
-              <Navigate to={userData.role === 'admin' ? '/admin' : '/dashboard'} replace />
+              <Navigate to={userData.role === 'admin' ? '/admin' : userData.role === 'gate_manager' ? '/gate-controls' : '/dashboard'} replace />
             ) : (
               <Onboarding />
             )}
@@ -76,13 +77,23 @@ function AppRoutes() {
         }
       />
 
+      {/* Gate controls */}
+      <Route
+        path="/gate-controls"
+        element={
+          <ProtectedRoute gateManagerOnly>
+            <GateControlsPage />
+          </ProtectedRoute>
+        }
+      />
+
       {/* Default redirect */}
       <Route
         path="/"
         element={
           currentUser ? (
             userData ? (
-              <Navigate to={userData.role === 'admin' ? '/admin' : '/dashboard'} replace />
+              <Navigate to={userData.role === 'admin' ? '/admin' : userData.role === 'gate_manager' ? '/gate-controls' : '/dashboard'} replace />
             ) : (
               <Navigate to="/onboarding" replace />
             )

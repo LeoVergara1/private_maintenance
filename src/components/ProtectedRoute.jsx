@@ -1,7 +1,7 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-export const ProtectedRoute = ({ children, requireOnboarding = true, adminOnly = false }) => {
+export const ProtectedRoute = ({ children, requireOnboarding = true, adminOnly = false, gateManagerOnly = false }) => {
   const { currentUser, userData } = useAuth();
 
   // Not authenticated
@@ -16,6 +16,11 @@ export const ProtectedRoute = ({ children, requireOnboarding = true, adminOnly =
 
   // Admin only route
   if (adminOnly && userData?.role !== 'admin') {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // Gate manager route: accessible by admin and gate_manager
+  if (gateManagerOnly && userData?.role !== 'admin' && userData?.role !== 'gate_manager') {
     return <Navigate to="/dashboard" replace />;
   }
 

@@ -15,8 +15,17 @@ Firebase Project
 │   │       ├── email: string
 │   │       ├── displayName: string
 │   │       ├── houseNumber: number (1-60)
-│   │       ├── role: string ("resident" | "admin")
+│   │       ├── role: string ("resident" | "admin" | "gate_manager")
 │   │       └── createdAt: Timestamp
+│   │
+│   ├── gateControls/
+│   │   └── {controlId}/
+│   │       ├── controlNumber: string (ej. "C-001")
+│   │       ├── houseNumber: number | null
+│   │       ├── status: string ("active" | "inactive")
+│   │       ├── notes: string
+│   │       ├── createdAt: Timestamp
+│   │       └── updatedAt: Timestamp
 │   │
 │   └── payments/
 │       └── {paymentId}/
@@ -53,6 +62,14 @@ Almacena la información de los usuarios registrados en el sistema.
 | houseNumber | number | Sí | Número de casa (1-60) | 15 |
 | role | string | Sí | Rol del usuario | "resident" |
 | createdAt | Timestamp | Sí | Fecha de registro | Timestamp(2026, 1, 29) |
+
+### Roles disponibles
+
+| Rol | Descripción | Acceso |
+|-----|-------------|--------|
+| `resident` | Residente de una casa | `/dashboard` — registrar y ver pagos propios |
+| `admin` | Administrador del condominio | `/admin`, `/gate-controls` — gestión total |
+| `gate_manager` | Administrador del portón | `/gate-controls` + `/dashboard` — controles del portón y sus propios pagos |
 
 ### Reglas de Validación
 - `houseNumber` debe ser único (no puede haber dos usuarios con la misma casa)

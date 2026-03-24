@@ -20,6 +20,12 @@ service cloud.firestore {
               get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
     }
 
+    function isGateManager() {
+      return isAuthenticated() &&
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'gate_manager';
+    }
+
     // Check if creating an admin payment (manual, semestral, annual)
     function isAdminPayment() {
       return request.resource.data.manuallyCreated == true &&
@@ -76,6 +82,21 @@ service cloud.firestore {
       
       // All authenticated users can delete expenses
       allow delete: if isAuthenticated();
+    }
+
+    // Gate Controls collection rules
+    match /gateControls/{controlId} {
+      // Only admins and gate managers can read gate controls
+      allow read: if isAdmin() || isGateManager();
+
+      // Only admins and gate managers can create gate controls
+      allow create: if isAdmin() || isGateManager();
+
+      // Only admins and gate managers can update gate controls
+      allow update: if isAdmin() || isGateManager();
+
+      // Only admins and gate managers can delete gate controls
+      allow delete: if isAdmin() || isGateManager();
     }
 
     // Initial Deposits collection rules

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import DashboardLayout from '../components/DashboardLayout';
 import { 
   checkDuplicatePayment, 
   uploadReceipt, 
@@ -17,11 +18,9 @@ import { compressImage, formatFileSize } from '../utils/imageOptimization';
 import { generateReceiptNumber } from '../utils/receiptGenerator';
 import ReceiptModal from '../components/ReceiptModal';
 import PaymentConfirmationModal from '../components/PaymentConfirmationModal';
-import { useNavigate } from 'react-router-dom';
 
 export default function ResidentDashboard() {
-  const { currentUser, userData, signOut } = useAuth();
-  const navigate = useNavigate();
+  const { currentUser, userData } = useAuth();
   const [amount, setAmount] = useState(300);
   const [selectedFile, setSelectedFile] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -197,15 +196,6 @@ export default function ResidentDashboard() {
     );
   };
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      navigate('/login');
-    } catch (error) {
-      console.error('Error al cerrar sesión:', error);
-    }
-  };
-
   const handleConfirmationModalClose = async () => {
     // Verify again when closing the confirmation modal
     await checkCurrentMonthPayment();
@@ -213,33 +203,7 @@ export default function ResidentDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Panel de Residente</h1>
-              <p className="text-sm text-gray-600">Casa {userData?.houseNumber}</p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => navigate('/financial-report')}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-              >
-                Ver Desglose
-              </button>
-              <button
-                onClick={handleSignOut}
-                className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                Cerrar Sesión
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
+    <DashboardLayout>
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Late payment alert */}
         {isLate && !hasPaidThisMonth && (
@@ -449,6 +413,6 @@ export default function ResidentDashboard() {
           createdAt: viewingReceiptPayment.createdAt
         } : null}
       />
-    </div>
+    </DashboardLayout>
   );
 }

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import DashboardLayout from '../components/DashboardLayout';
 import { getAllPaymentsByYear } from '../services/paymentService';
 import { getExpensesByYear } from '../services/expensesService';
 import { getInitialDepositsByYear } from '../services/initialDepositService';
@@ -17,8 +16,7 @@ import AnnualPaymentPanel from '../components/AnnualPaymentPanel';
 import InitialDepositPanel from '../components/InitialDepositPanel';
 
 export default function AdminDashboard() {
-  const { signOut } = useAuth();
-  const navigate = useNavigate();
+
   const [payments, setPayments] = useState([]);
   const [filteredPayments, setFilteredPayments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,14 +30,13 @@ export default function AdminDashboard() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterHouse, setFilterHouse] = useState('');
   const [filterMonth, setFilterMonth] = useState('all');
+  const [filterYear, setFilterYear] = useState(getCurrentYear());
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
 
-  const currentYear = getCurrentYear();
-
   useEffect(() => {
     loadPayments();
-  }, []);
+  }, [filterYear]);
 
   useEffect(() => {
     applyFilters();
@@ -49,12 +46,12 @@ export default function AdminDashboard() {
   const loadPayments = async () => {
     try {
       setLoading(true);
-      const allPayments = await getAllPaymentsByYear(currentYear);
+      const allPayments = await getAllPaymentsByYear(filterYear);
       setPayments(allPayments);
 
       // Load expenses (with fallback)
       try {
-        const allExpenses = await getExpensesByYear(currentYear);
+        const allExpenses = await getExpensesByYear(filterYear);
         setExpenses(allExpenses);
       } catch (err) {
         console.error('Error al cargar gastos:', err);
@@ -63,7 +60,7 @@ export default function AdminDashboard() {
 
       // Load initial deposits (with fallback)
       try {
-        const allDeposits = await getInitialDepositsByYear(currentYear);
+        const allDeposits = await getInitialDepositsByYear(filterYear);
         setInitialDeposits(allDeposits);
       } catch (err) {
         console.error('Error al cargar abonos iniciales:', err);
@@ -100,7 +97,7 @@ export default function AdminDashboard() {
   const handleExport = async () => {
     setExporting(true);
     try {
-      const filename = `pagos-${currentYear}.xlsx`;
+      const filename = `pagos-${filterYear}.xlsx`;
       await exportPaymentsToExcel(filteredPayments, filename);
     } catch (error) {
       console.error('Error al exportar:', error);
@@ -153,15 +150,6 @@ export default function AdminDashboard() {
     );
   };
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      navigate('/login');
-    } catch (error) {
-      console.error('Error al cerrar sesión:', error);
-    }
-  };
-
   const stats = getStats();
 
   // Pagination logic
@@ -171,33 +159,7 @@ export default function AdminDashboard() {
   const paginatedPayments = filteredPayments.slice(startIndex, endIndex);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Panel de Administrador</h1>
-              <p className="text-sm text-gray-600">Gestión de pagos de mantenimiento</p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => navigate('/financial-report')}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-              >
-                Reporte Financiero
-              </button>
-              <button
-                onClick={handleSignOut}
-                className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                Cerrar Sesión
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
+    <DashboardLayout>
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-7 gap-3 md:gap-4">
@@ -259,6 +221,23 @@ export default function AdminDashboard() {
         {/* Filters and Export */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="flex flex-wrap items-center gap-4 mb-6">
+            <div className="flex-1 min-w-[200px]">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Año
+              </label>
+              <select
+                value={filterYear}
+                onChange={(e) => setFilterYear(parseInt(e.target.value))}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                {Array.from({ length: 10 }, (_, i) => getCurrentYear() - i).map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div className="flex-1 min-w-[200px]">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Estado
@@ -490,6 +469,6 @@ export default function AdminDashboard() {
         receiptUrl={selectedReceipt?.url}
         fileName={selectedReceipt?.fileName}
       />
-    </div>
+    </DashboardLayout>
   );
 }

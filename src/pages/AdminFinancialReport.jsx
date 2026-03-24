@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import DashboardLayout from '../components/DashboardLayout';
 import { getAllPaymentsByYear } from '../services/paymentService';
 import { getExpensesByMonth, getExpensesByYear } from '../services/expensesService';
 import { getInitialDepositsByMonthYear, getInitialDepositsByYear } from '../services/initialDepositService';
@@ -9,8 +8,6 @@ import { getCurrentYear, getMonthName } from '../utils/dateValidation';
 import { TOTAL_HOUSES } from '../config/constants';
 
 export default function AdminFinancialReport() {
-  const { signOut, userData } = useAuth();
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [monthlyReport, setMonthlyReport] = useState({});
@@ -148,56 +145,18 @@ export default function AdminFinancialReport() {
     });
   };
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      navigate('/login');
-    } catch (error) {
-      console.error('Error al cerrar sesión:', error);
-    }
-  };
-
-  const handleBackToDashboard = () => {
-    const dashboardPath = userData?.role === 'admin' ? '/admin' : '/dashboard';
-    navigate(dashboardPath);
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-            <div className="text-2xl font-bold text-gray-900">Reporte de Pagos</div>
-              <p className="text-sm text-gray-600">Desglose de pagos por mes - {currentYear}</p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={handleBackToDashboard}
-                className="px-4 py-2 text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg transition-colors"
-              >
-                Atrás
-              </button>
-              <button
-                onClick={handleSignOut}
-                className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                Cerrar Sesión
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
+    <DashboardLayout>
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {error && (
           <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
@@ -551,6 +510,6 @@ export default function AdminFinancialReport() {
           </div>
         )}
       </main>
-    </div>
+    </DashboardLayout>
   );
 }

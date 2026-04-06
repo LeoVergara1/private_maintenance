@@ -260,11 +260,95 @@ allow read: if isAdmin();
 
 ---
 
+## Colección: utilities
+
+### Propósito
+Almacena información de utilidad para la privada (combinaciones de candados, ubicaciones de equipos, contactos de emergencia, notas generales). Accesible solo para administradores y encargados del portón.
+
+### Estructura del Documento
+
+| Campo | Tipo | Requerido | Descripción | Ejemplo |
+|-------|------|-----------|-------------|---------|
+| category | string | Sí | Categoría del item | "Seguridad" |
+| title | string | Sí | Título corto del item | "Bomba trasera" |
+| content | string | Sí | Contenido/descripción détallada | "Combinación: 123-456" |
+| createdBy | string | Sí | UID del usuario que creó | "abc123xyz..." |
+| createdAt | Timestamp | Sí | Fecha de creación | Timestamp(2026, 3, 25) |
+| updatedAt | Timestamp | Sí | Fecha de última actualización | Timestamp(2026, 3, 25) |
+| isArchived | boolean | Sí | Indica si el item está archivado (soft delete) | false |
+
+### Categorías Disponibles
+
+| Categoría | Descripción |
+|-----------|-------------|
+| `Seguridad` | Combinaciones de candados, códigos de acceso, etc. |
+| `Mantenimiento` | Ubicaciones de herramientas, equipos, etc. |
+| `Contactos` | Números de emergencia, servicios (electricista, plomero, etc.) |
+| `Notas Generales` | Recordatorios e información general |
+
+### Reglas de Validación
+- `category` debe estar en la lista de categorías disponibles
+- `title` una cadena no vacía (máx 100 caracteres)
+- `content` una cadena no vacía (máx 5000 caracteres)
+- `isArchived` por defecto es `false`
+- Soft delete: No se elimina físicamente, se marca como archivado
+
+### Ejemplo de Documento
+
+```javascript
+// Document ID: "doc123abc..."
+{
+  category: "Seguridad",
+  title: "Bomba trasera",
+  content: "Combinación: 123-456-789\nÚltima actualización: Marzo 2026",
+  createdBy: "admin123xyz...",
+  createdAt: Timestamp(2026, 3, 25, 10, 30, 0),
+  updatedAt: Timestamp(2026, 3, 25, 10, 30, 0),
+  isArchived: false
+}
+```
+
+### Queries Comunes
+
+```javascript
+// Obtener todas las utilidades (no archivadas)
+const q = query(
+  collection(db, 'utilities'),
+  where('isArchived', '==', false),
+  orderBy('category', 'asc'),
+  orderBy('createdAt', 'desc')
+);
+
+// Obtener utilidades por categoría
+const q = query(
+  collection(db, 'utilities'),
+  where('category', '==', 'Seguridad'),
+  where('isArchived', '==', false),
+  orderBy('createdAt', 'desc')
+);
+```
+
+### Acceso
+- **Lectura**: Admin y Gate Manager
+- **Escritura (crear/actualizar)**: Solo Admin
+- **Eliminación**: Solo Admin (soft delete via isArchived flag)
+
+---
+
 ## Índices Compuestos Requeridos
 
 Firestore requiere índices para consultas complejas:
 
-### Índice 1: Pagos por Usuario y Año
+### Índice 1: Utilidades por Categoría
+```
+Collection: utilities
+Fields:
+  - isArchived (Ascending)
+  - category (Ascending)
+  - createdAt (Descending)
+```
+
+### Índice 2: Pagos por Usuario y Año
 ```
 Collection: payments
 Fields:

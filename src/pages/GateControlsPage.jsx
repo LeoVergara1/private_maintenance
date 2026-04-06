@@ -23,6 +23,8 @@ export default function GateControlsPage() {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [filterControl, setFilterControl] = useState('');
+  const [filterHouse, setFilterHouse] = useState('');
 
   useEffect(() => {
     loadControls();
@@ -135,6 +137,17 @@ export default function GateControlsPage() {
 
 
 
+  // ── Filtered list ──────────────────────────────────────
+  const filteredControls = controls.filter(c => {
+    const matchControl = filterControl === '' ||
+      c.controlNumber.toLowerCase().includes(filterControl.toLowerCase());
+    const matchHouse = filterHouse === '' ||
+      (filterHouse === '__unassigned__'
+        ? c.houseNumber === null || c.houseNumber === undefined
+        : String(c.houseNumber) === filterHouse);
+    return matchControl && matchHouse;
+  });
+
   // ── House options ──────────────────────────────────────
   const houseOptions = Array.from({ length: TOTAL_HOUSES }, (_, i) => i + 1);
 
@@ -151,8 +164,48 @@ export default function GateControlsPage() {
 
         {/* Table header */}
         <div className="bg-white rounded-lg shadow-md">
+          {/* Filters */}
+          <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                value={filterControl}
+                onChange={e => setFilterControl(e.target.value)}
+                placeholder="Buscar por control..."
+                className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
+            </div>
+            <select
+              value={filterHouse}
+              onChange={e => setFilterHouse(e.target.value)}
+              className="flex-1 sm:max-w-[180px] px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+            >
+              <option value="">Todas las casas</option>
+              <option value="__unassigned__">Sin asignar</option>
+              {houseOptions.map(n => (
+                <option key={n} value={n}>Casa {n}</option>
+              ))}
+            </select>
+            {(filterControl || filterHouse) && (
+              <button
+                onClick={() => { setFilterControl(''); setFilterHouse(''); }}
+                className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap"
+              >
+                Limpiar
+              </button>
+            )}
+          </div>
+
           <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Lista de Controles</h2>
+            <h2 className="text-lg font-semibold text-gray-900">
+              Lista de Controles
+              {(filterControl || filterHouse) && (
+                <span className="ml-2 text-sm font-normal text-gray-500">{filteredControls.length} resultado{filteredControls.length !== 1 ? 's' : ''}</span>
+              )}
+            </h2>
             <button
               onClick={openCreateModal}
               className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center gap-2"
@@ -168,13 +221,17 @@ export default function GateControlsPage() {
             <div className="flex justify-center py-16">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600" />
             </div>
-          ) : controls.length === 0 ? (
+          ) : filteredControls.length === 0 ? (
             <div className="text-center py-16">
               <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
               </svg>
-              <p className="text-gray-500 font-medium">No hay controles registrados</p>
-              <p className="text-gray-400 text-sm mt-1">Crea el primer control con el botón de arriba</p>
+              <p className="text-gray-500 font-medium">
+                {controls.length === 0 ? 'No hay controles registrados' : 'Sin resultados para los filtros aplicados'}
+              </p>
+              <p className="text-gray-400 text-sm mt-1">
+                {controls.length === 0 ? 'Crea el primer control con el botón de arriba' : 'Intenta con otros criterios de búsqueda'}
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -189,7 +246,7 @@ export default function GateControlsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {controls.map(control => (
+                  {filteredControls.map(control => (
                     <tr key={control.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap font-mono font-semibold text-gray-900">
                         {control.controlNumber}
@@ -257,7 +314,7 @@ export default function GateControlsPage() {
 
       {/* Create / Edit Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
             <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900">

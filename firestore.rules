@@ -113,5 +113,26 @@ service cloud.firestore {
       // Only admins can delete initial deposits
       allow delete: if isAdmin();
     }
+
+    // Utilities collection rules
+    match /utilities/{utilityId} {
+      // Admins and gate managers can read utilities
+      allow read: if isAdmin() || isGateManager();
+
+      // Only admins can create utilities
+      allow create: if isAdmin() && 
+                       request.resource.data.category in ['Seguridad', 'Mantenimiento', 'Contactos', 'Notas Generales'] &&
+                       request.resource.data.title != null &&
+                       request.resource.data.content != null;
+
+      // Only admins can update utilities
+      allow update: if isAdmin() && 
+                       request.resource.data.category in ['Seguridad', 'Mantenimiento', 'Contactos', 'Notas Generales'] &&
+                       request.resource.data.title != null &&
+                       request.resource.data.content != null;
+
+      // Only admins can delete utilities
+      allow delete: if isAdmin();
+    }
   }
 }

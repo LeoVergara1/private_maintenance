@@ -7,6 +7,7 @@ import ResidentDashboard from './pages/ResidentDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminFinancialReport from './pages/AdminFinancialReport';
 import GateControlsPage from './pages/GateControlsPage';
+import UtilitiesPage from './pages/UtilitiesPage';
 
 function AppRoutes() {
   const { currentUser, userData, loading } = useAuth();
@@ -83,6 +84,16 @@ function AppRoutes() {
         element={
           <ProtectedRoute gateManagerOnly>
             <GateControlsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Utilities */}
+      <Route
+        path="/utilities"
+        element={
+          <ProtectedRoute gateManagerOnly>
+            <UtilitiesPage />
           </ProtectedRoute>
         }
       />

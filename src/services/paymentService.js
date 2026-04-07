@@ -6,6 +6,7 @@ import {
   getDocs, 
   doc, 
   updateDoc,
+  deleteDoc,
   orderBy,
   Timestamp,
   limit
@@ -375,6 +376,20 @@ export const createAnnualPayment = async (houseNumber, amount, currentMonth, yea
     return paymentIds;
   } catch (error) {
     console.error('Error al crear pago anual:', error);
+    throw error;
+  }
+};
+
+/**
+ * Delete a payment record (admin only)
+ */
+export const deletePayment = async (paymentId) => {
+  try {
+    const paymentRef = doc(db, 'payments', paymentId);
+    await deleteDoc(paymentRef);
+    clearCache('payments'); // Clear payments cache after deletion
+  } catch (error) {
+    console.error('Error al eliminar pago:', error);
     throw error;
   }
 };

@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
-import { getAllPaymentsByYear } from '../services/paymentService';
+import { getAllPaymentsByYear, deletePayment } from '../services/paymentService';
 import { getExpensesByYear } from '../services/expensesService';
 import { getInitialDepositsByYear } from '../services/initialDepositService';
 import { getCurrentYear, getMonthName } from '../utils/dateValidation';
 import { exportPaymentsToExcel } from '../utils/excelExport';
 import PaymentStatusModal from '../components/PaymentStatusModal';
 import ReceiptModal from '../components/ReceiptModal';
+import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 import UnpaidHousesPanel from '../components/UnpaidHousesPanel';
 import UnregisteredHousesPanel from '../components/UnregisteredHousesPanel';
 import ExpensesPanel from '../components/ExpensesPanel';
@@ -22,6 +23,8 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [selectedReceipt, setSelectedReceipt] = useState(null);
+  const [selectedDeletePayment, setSelectedDeletePayment] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [expenses, setExpenses] = useState([]);
   const [initialDeposits, setInitialDeposits] = useState([]);
@@ -104,6 +107,22 @@ export default function AdminDashboard() {
       alert('Error al exportar el archivo');
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleDeletePayment = async () => {
+    if (!selectedDeletePayment) return;
+    
+    setDeleteLoading(true);
+    try {
+      await deletePayment(selectedDeletePayment.id);
+      setSelectedDeletePayment(null);
+      await loadPayments();
+    } catch (error) {
+      console.error('Error al eliminar pago:', error);
+      alert('Error al eliminar el pago');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -371,6 +390,14 @@ export default function AdminDashboard() {
                           >
                             Editar
                           </button>
+                          <span className="text-gray-300">|</span>
+                          <button
+                            onClick={() => setSelectedDeletePayment(payment)}
+                            className="text-red-600 hover:text-red-700 font-medium"
+                            title="Eliminar registro"
+                          >
+                            Eliminar
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -468,6 +495,14 @@ export default function AdminDashboard() {
         onClose={() => setSelectedReceipt(null)}
         receiptUrl={selectedReceipt?.url}
         fileName={selectedReceipt?.fileName}
+      />
+
+      <DeleteConfirmationModal
+        isOpen={!!selectedDeletePayment}
+        onClose={() => setSelectedDeletePayment(null)}
+        onConfirm={handleDeletePayment}
+        loading={deleteLoading}
+        payment={selectedDeletePayment}
       />
     </DashboardLayout>
   );

@@ -64,8 +64,8 @@ service cloud.firestore {
       // Only admins can update payments
       allow update: if isAdmin();
       
-      // No one can delete payments
-      allow delete: if false;
+      // Only admins can delete payments
+      allow delete: if isAdmin();
     }
     
     // Expenses collection rules

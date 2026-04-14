@@ -48,6 +48,7 @@ const NAV_ITEMS = {
     { label: 'Mis Pagos',             path: '/dashboard',        icon: <IconPayments /> },
     { label: 'Controles del Portón',  path: '/gate-controls',    icon: <IconGate /> },
     { label: 'Utilidades',            path: '/utilities',        icon: <IconUtilities /> },
+    { label: 'Reporte Financiero',    path: '/financial-report', icon: <IconReport /> },
   ],
   resident: [
     { label: 'Mis Pagos',             path: '/dashboard',        icon: <IconPayments /> },

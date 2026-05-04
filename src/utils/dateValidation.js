@@ -13,19 +13,19 @@ export const getCurrentYear = () => {
 };
 
 /**
- * Check if current date is within payment window (1-10 of the month)
+ * Check if current date is within payment window (1-15 of the month)
  */
 export const isWithinPaymentWindow = () => {
   const currentDay = new Date().getDate();
-  return currentDay >= 1 && currentDay <= 10;
+  return currentDay >= 1 && currentDay <= 15;
 };
 
 /**
- * Check if payment is late (after day 10)
+ * Check if payment is late (after day 15)
  */
 export const isLatePayment = () => {
   const currentDay = new Date().getDate();
-  return currentDay > 10;
+  return currentDay > 15;
 };
 
 /**

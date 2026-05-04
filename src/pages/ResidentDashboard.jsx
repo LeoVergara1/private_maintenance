@@ -219,7 +219,7 @@ export default function ResidentDashboard() {
               <div>
                 <h3 className="text-red-800 font-semibold">Pago Tardío</h3>
                 <p className="text-red-700 text-sm">
-                  El periodo de pago (1-10 del mes) ha terminado. Tu pago será marcado como tardío.
+                  El periodo de pago (1-15 del mes) ha terminado. Tu pago será marcado como tardío.
                 </p>
               </div>
             </div>

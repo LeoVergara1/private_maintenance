@@ -3,9 +3,11 @@ import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
 import { 
   checkDuplicatePayment, 
+  checkDuplicatePaymentByHouse,
   uploadReceipt, 
   createPayment, 
-  getPaymentsByYear 
+  getPaymentsByYear,
+  getPaymentsByHouseAndYear
 } from '../services/paymentService';
 import { 
   getCurrentMonth, 
@@ -50,7 +52,8 @@ export default function ResidentDashboard() {
 
   const loadPayments = async () => {
     try {
-      const userPayments = await getPaymentsByYear(currentUser.uid, currentYear);
+      console.log('Cargando pagos para casa:', userData.houseNumber, 'año:', currentYear);
+      const userPayments = await getPaymentsByHouseAndYear(userData.houseNumber, currentYear);
       setPayments(userPayments);
     } catch (error) {
       console.error('Error al cargar pagos:', error);
@@ -61,7 +64,8 @@ export default function ResidentDashboard() {
 
   const checkCurrentMonthPayment = async () => {
     try {
-      const hasPaid = await checkDuplicatePayment(currentUser.uid, currentMonth, currentYear);
+      // Check if ANY payment exists for this house this month (resident or admin uploaded)
+      const hasPaid = await checkDuplicatePaymentByHouse(userData.houseNumber, currentMonth, currentYear);
       setHasPaidThisMonth(hasPaid);
     } catch (error) {
       console.error('Error al verificar pago del mes:', error);

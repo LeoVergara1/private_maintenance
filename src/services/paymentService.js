@@ -42,6 +42,31 @@ export const checkDuplicatePayment = async (userId, month, year) => {
 };
 
 /**
+ * Check if payment already exists for house in specific month/year
+ * This checks if ANY payment exists for the house (resident or admin uploaded)
+ * IMPORTANT: Does NOT use cache - always reads fresh from Firestore
+ */
+export const checkDuplicatePaymentByHouse = async (houseNumber, month, year) => {
+  try {
+    const q = query(
+      collection(db, 'payments'),
+      where('houseNumber', '==', houseNumber),
+      where('month', '==', month),
+      where('year', '==', year),
+      limit(1) // Only need to know if it exists
+    );
+    
+    const snapshot = await getDocs(q);
+    const exists = !snapshot.empty;
+
+    return exists;
+  } catch (error) {
+    console.error('Error al verificar pago por casa:', error);
+    throw error;
+  }
+};
+
+/**
  * Upload receipt file to Firebase Storage
  */
 export const uploadReceipt = async (file, userId, month, year) => {
@@ -109,6 +134,36 @@ export const getPaymentsByYear = async (userId, year) => {
     return payments;
   } catch (error) {
     console.error('Error al obtener pagos:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get payments by house number and year
+ * Shows ALL payments for a house (resident + admin uploaded)
+ * IMPORTANT: Does NOT use cache - always reads fresh from Firestore
+ */
+export const getPaymentsByHouseAndYear = async (houseNumber, year) => {
+  try {
+    const q = query(
+      collection(db, 'payments'),
+      where('houseNumber', '==', houseNumber),
+      where('year', '==', year),
+      orderBy('month', 'desc'),
+      limit(12) // Max 12 months per year
+    );
+    
+    const snapshot = await getDocs(q);
+    const payments = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      createdAt: doc.data().createdAt?.toDate(),
+      updatedAt: doc.data().updatedAt?.toDate()
+    }));
+
+    return payments;
+  } catch (error) {
+    console.error('Error al obtener pagos por casa:', error);
     throw error;
   }
 };

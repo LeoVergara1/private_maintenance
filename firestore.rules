@@ -31,6 +31,18 @@ service cloud.firestore {
       return request.resource.data.manuallyCreated == true &&
              request.resource.data.createdBy != null;
     }
+
+    // Get house number for current user
+    function getUserHouseNumber() {
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return userDoc.data.houseNumber;
+    }
+
+    // Check if user is restricted from common area (e.g., due to unpaid fees or damage)
+    function isUserRestricted() {
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return userDoc.data.get('restrictedFromCommonArea', false) == true;
+    }
     
     // Users collection rules
     match /users/{userId} {
@@ -43,7 +55,7 @@ service cloud.firestore {
       // Only the owner can create their own user document (onboarding)
       allow create: if isOwner(userId) && request.resource.data.uid == request.auth.uid;
       
-      // Admins can update user documents (for role changes)
+      // Admins can update user documents (for role changes, restrictions, etc)
       allow update: if isAdmin();
       
       // No one can delete users
@@ -132,6 +144,25 @@ service cloud.firestore {
                        request.resource.data.content != null;
 
       // Only admins can delete utilities
+      allow delete: if isAdmin();
+    }
+
+    // Common Area Reservations collection rules
+    match /commonAreaReservations/{reservationId} {
+      // All authenticated users can read all reservations (needed for calendar view)
+      allow read: if isAuthenticated();
+      
+      // Residents can create reservations for their own house
+      // Admins can create for any house
+      // Cannot create if user is restricted
+      allow create: if isAuthenticated() && !isUserRestricted() && 
+                       ((request.resource.data.houseNumber == getUserHouseNumber()) || isAdmin());
+      
+      // Update only by creator or admin (mainly for status/cancellation)
+      allow update: if isAuthenticated() && 
+                       (request.resource.data.createdBy == request.auth.uid || isAdmin());
+      
+      // Only admins can delete
       allow delete: if isAdmin();
     }
   }

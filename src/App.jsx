@@ -8,6 +8,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminFinancialReport from './pages/AdminFinancialReport';
 import GateControlsPage from './pages/GateControlsPage';
 import UtilitiesPage from './pages/UtilitiesPage';
+import CommonAreaPage from './pages/CommonAreaPage';
 
 function AppRoutes() {
   const { currentUser, userData, loading } = useAuth();
@@ -94,6 +95,16 @@ function AppRoutes() {
         element={
           <ProtectedRoute gateManagerOnly>
             <UtilitiesPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Common Area */}
+      <Route
+        path="/common-area"
+        element={
+          <ProtectedRoute>
+            <CommonAreaPage />
           </ProtectedRoute>
         }
       />

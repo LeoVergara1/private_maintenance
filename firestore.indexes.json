@@ -131,6 +131,80 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "commonAreaReservations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "houseNumber",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "date",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "commonAreaReservations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "date",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dayOfWeek",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "commonAreaReservations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "houseNumber",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isWeekend",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "eventType",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "commonAreaReservations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "date",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "commonAreaReservations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "date",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []

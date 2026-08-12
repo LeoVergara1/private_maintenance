@@ -81,7 +81,11 @@ export default function AdminDashboard() {
 
     // Filter by status
     if (filterStatus !== 'all') {
-      filtered = filtered.filter(p => p.status === filterStatus);
+      if (filterStatus === 'pending-approved') {
+        filtered = filtered.filter(p => p.status === 'pending' || p.status === 'approved');
+      } else {
+        filtered = filtered.filter(p => p.status === filterStatus);
+      }
     }
 
     // Filter by house
@@ -269,6 +273,7 @@ export default function AdminDashboard() {
                 <option value="all">Todos</option>
                 <option value="pending">Pendientes</option>
                 <option value="approved">Aprobados</option>
+                <option value="pending-approved">Pendiente + Aprobado</option>
                 <option value="rejected">Rechazados</option>
               </select>
             </div>
@@ -443,7 +448,7 @@ export default function AdminDashboard() {
                 <div className="text-sm text-gray-600">
                   Mostrando {startIndex + 1} a {Math.min(endIndex, filteredPayments.length)} de {filteredPayments.length} pagos
                 </div>
-                <div className="flex gap-1">
+                <div className="flex gap-1 items-center flex-wrap justify-end">
                   <button
                     onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
@@ -453,19 +458,75 @@ export default function AdminDashboard() {
                   </button>
                   
                   <div className="flex gap-1">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`px-3 py-2 rounded-lg text-sm font-medium ${
-                          currentPage === page
-                            ? 'bg-blue-600 text-white'
-                            : 'border border-gray-300 text-gray-700 hover:bg-gray-100'
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    ))}
+                    {/* Mostrar solo 5 números de página alrededor de la actual */}
+                    {(() => {
+                      const maxVisible = 5;
+                      const halfVisible = Math.floor(maxVisible / 2);
+                      let startPage = Math.max(1, currentPage - halfVisible);
+                      let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+                      
+                      // Ajustar si estamos cerca del final
+                      if (endPage - startPage + 1 < maxVisible) {
+                        startPage = Math.max(1, endPage - maxVisible + 1);
+                      }
+                      
+                      const pages = [];
+                      
+                      // Primera página
+                      if (startPage > 1) {
+                        pages.push(
+                          <button
+                            key={1}
+                            onClick={() => setCurrentPage(1)}
+                            className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100"
+                          >
+                            1
+                          </button>
+                        );
+                        if (startPage > 2) {
+                          pages.push(
+                            <span key="dots-start" className="px-2 py-2 text-gray-500">...</span>
+                          );
+                        }
+                      }
+                      
+                      // Páginas visibles
+                      for (let i = startPage; i <= endPage; i++) {
+                        pages.push(
+                          <button
+                            key={i}
+                            onClick={() => setCurrentPage(i)}
+                            className={`px-3 py-2 rounded-lg text-sm font-medium ${
+                              currentPage === i
+                                ? 'bg-blue-600 text-white'
+                                : 'border border-gray-300 text-gray-700 hover:bg-gray-100'
+                            }`}
+                          >
+                            {i}
+                          </button>
+                        );
+                      }
+                      
+                      // Última página
+                      if (endPage < totalPages) {
+                        if (endPage < totalPages - 1) {
+                          pages.push(
+                            <span key="dots-end" className="px-2 py-2 text-gray-500">...</span>
+                          );
+                        }
+                        pages.push(
+                          <button
+                            key={totalPages}
+                            onClick={() => setCurrentPage(totalPages)}
+                            className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100"
+                          >
+                            {totalPages}
+                          </button>
+                        );
+                      }
+                      
+                      return pages;
+                    })()}
                   </div>
                   
                   <button

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getReservationsByDateRange, getReservationsByDate, deleteReservation } from '../services/commonAreaService';
-import { getMonthName } from '../utils/dateValidation';
+import { getMonthName, getCurrentMonth, getCurrentYear } from '../utils/dateValidation';
+import { checkHouseDebt, getMonthsDescription } from '../utils/paymentValidation';
 
 export default function CommonAreaCalendar({ houseNumber, isAdmin = false, onDateSelect }) {
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
@@ -80,6 +81,20 @@ export default function CommonAreaCalendar({ houseNumber, isAdmin = false, onDat
   };
 
   const handleDateClick = async (day) => {
+    // Check if house has debt before allowing reservation
+    try {
+      const debtCheck = await checkHouseDebt(houseNumber, getCurrentMonth(), getCurrentYear());
+      if (debtCheck.hasDebt) {
+        const monthsList = getMonthsDescription(debtCheck.unpaidMonths);
+        alert(`La casa #${houseNumber} tiene adeudo.\n\nMeses pendientes: ${monthsList}\n\nResuelve los pagos antes de hacer una reserva.`);
+        return;
+      }
+    } catch (error) {
+      console.error('Error al verificar adeudos:', error);
+      alert('Error al verificar el estado de pagos. Por favor intenta de nuevo.');
+      return;
+    }
+
     const date = new Date(currentYear, currentMonth, day);
     setSelectedDate(date);
     

@@ -3,7 +3,8 @@ import {
   createReservation, 
   countPrivateEventsThisYear
 } from '../services/commonAreaService';
-import { getMonthName } from '../utils/dateValidation';
+import { getCurrentMonth, getCurrentYear } from '../utils/dateValidation';
+import { checkHouseDebt, getMonthsDescription } from '../utils/paymentValidation';
 
 export default function ReservationForm({ houseNumber, userId, isAdmin = false, onReservationCreated }) {
   const [selectedHouseNumber, setSelectedHouseNumber] = useState(houseNumber);
@@ -79,6 +80,22 @@ export default function ReservationForm({ houseNumber, userId, isAdmin = false, 
     }
 
     setLoading(true);
+
+    try {
+      // Check if house has any debt (unpaid months)
+      const debtCheck = await checkHouseDebt(selectedHouseNumber, getCurrentMonth(), getCurrentYear());
+      if (debtCheck.hasDebt) {
+        const monthsList = getMonthsDescription(debtCheck.unpaidMonths);
+        setError(`La casa #${selectedHouseNumber} tiene adeudo. Meses pendientes: ${monthsList}. Resuelve los pagos antes de hacer una reserva.`);
+        setLoading(false);
+        return;
+      }
+    } catch (debtCheckError) {
+      console.error('Error al verificar adeudos:', debtCheckError);
+      setError('Error al verificar el estado de pagos. Por favor intenta de nuevo.');
+      setLoading(false);
+      return;
+    }
 
     try {
       // Create reservation

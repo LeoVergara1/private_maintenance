@@ -63,6 +63,11 @@ const NAV_ITEMS = {
     //{ label: 'Área Común',            path: '/common-area',      icon: <IconCommonArea /> },
     { label: 'Ver Desglose',          path: '/financial-report', icon: <IconReport /> },
   ],
+  resident_beta: [
+    { label: 'Mis Pagos',             path: '/dashboard',        icon: <IconPayments /> },
+    { label: 'Área Común',            path: '/common-area',      icon: <IconCommonArea /> },
+    { label: 'Ver Desglose',          path: '/financial-report', icon: <IconReport /> },
+  ],
 };
 
 const ROLE_LABELS = {

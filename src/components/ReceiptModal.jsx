@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { isImageFile, isPdfFile } from '../utils/fileValidation';
 
 export default function ReceiptModal({ isOpen, onClose, receiptUrl, fileName }) {
   const [isLoading, setIsLoading] = useState(true);

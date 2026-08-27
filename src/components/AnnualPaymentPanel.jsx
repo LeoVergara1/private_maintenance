@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { createAnnualPayment, getAllPaymentsByYear } from '../services/paymentService';
+import { createAnnualPayment } from '../services/paymentService';
 import { getCurrentMonth, getCurrentYear, getMonthName } from '../utils/dateValidation';
 import { validateFile } from '../utils/fileValidation';
 import { useAuth } from '../contexts/AuthContext';
@@ -12,7 +12,6 @@ export default function AnnualPaymentPanel({ onPaymentCreated }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [allPayments, setAllPayments] = useState([]);
 
   // Form state
   const [houseNumber, setHouseNumber] = useState('');
@@ -23,19 +22,6 @@ export default function AnnualPaymentPanel({ onPaymentCreated }) {
   const [selectedFile, setSelectedFile] = useState(null);
 
   const currentMonth = getCurrentMonth();
-
-  // Load all payments when component mounts
-  useEffect(() => {
-    const loadPayments = async () => {
-      try {
-        const payments = await getAllPaymentsByYear(getCurrentYear());
-        setAllPayments(payments);
-      } catch (err) {
-        console.error('Error al cargar pagos:', err);
-      }
-    };
-    loadPayments();
-  }, []);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];

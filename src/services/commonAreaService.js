@@ -297,20 +297,6 @@ export const validateReservationTime = (dayOfWeek, endTime, isSeingOutGuests = f
   return { valid: true };
 };
 
-/**
- * Check if a house is restricted from making reservations
- */
-export const checkHouseRestriction = async (houseNumber) => {
-  try {
-    // Note: This would require querying users collection by houseNumber
-    // For now, return false as restriction is managed at UI level
-    // Future: Add user service function to check restriction
-    return false;
-  } catch (error) {
-    console.error('Error al verificar restricción de casa:', error);
-    throw error;
-  }
-};
 
 /**
  * Get statistics for a house (annual private events count, etc)

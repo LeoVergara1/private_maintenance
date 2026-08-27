@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { createSemestralPayment, getAllPaymentsByYear } from '../services/paymentService';
+import { createSemestralPayment } from '../services/paymentService';
 import { getCurrentMonth, getCurrentYear, getMonthName } from '../utils/dateValidation';
 import { validateFile } from '../utils/fileValidation';
 import { useAuth } from '../contexts/AuthContext';

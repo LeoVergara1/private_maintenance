@@ -133,13 +133,6 @@ export default function ManualPaymentPanel({ onPaymentCreated }) {
     }
   };
 
-  const formatCurrency = (amount) => {
-    return amount.toLocaleString('es-MX', { 
-      minimumFractionDigits: 2, 
-      maximumFractionDigits: 2 
-    });
-  };
-
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {

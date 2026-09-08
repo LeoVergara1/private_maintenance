@@ -202,8 +202,7 @@ export const getAllPaymentsByYear = async (year) => {
     const q = query(
       collection(db, 'payments'),
       where('year', '==', year),
-      orderBy('createdAt', 'desc'),
-      limit(500) // Limit to prevent large reads
+      orderBy('createdAt', 'desc')
     );
     
     const snapshot = await getDocs(q);
@@ -271,6 +270,9 @@ export const createManualPayment = async (
   isForOtherMonth = false, coveredMonths = []
 ) => {
   try {
+    // If payment is for other months, auto-approve the main payment
+    const paymentStatus = isForOtherMonth ? 'approved' : status;
+
     const paymentData = {
       houseNumber,
       amount,
@@ -279,7 +281,7 @@ export const createManualPayment = async (
       userId: null, // Initially null
       createdBy: createdByUserId, // Track which admin created this
       isLate,
-      status, // Use provided status
+      status: paymentStatus, // Use provided status (auto-approve if offset)
       adminNotes: adminNotes.trim(), // Add admin notes
       manuallyCreated: true,
       linkedAt: null, // Will be set when linked to user

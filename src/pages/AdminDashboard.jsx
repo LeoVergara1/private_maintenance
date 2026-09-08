@@ -359,7 +359,19 @@ export default function AdminDashboard() {
                         </span>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {getMonthName(payment.month)} {payment.year}
+                        <div className="flex flex-col">
+                          <span>{getMonthName(payment.month)} {payment.year}</span>
+                          {payment.isForOtherMonth && payment.coveredMonths && payment.coveredMonths.length > 0 && (
+                            <span className="text-xs text-blue-600 mt-1">
+                              Cubre: {payment.coveredMonths.map(m => getMonthName(m).substring(0, 3)).join(', ')}
+                            </span>
+                          )}
+                          {payment.isPlaceholder && (
+                            <span className="text-xs text-gray-400 mt-1 italic">
+                              Referencia
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {payment.amount === 0 ? '-' : `$${payment.amount}`}

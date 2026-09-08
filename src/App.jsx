@@ -9,6 +9,7 @@ import AdminFinancialReport from './pages/AdminFinancialReport';
 import GateControlsPage from './pages/GateControlsPage';
 import UtilitiesPage from './pages/UtilitiesPage';
 import CommonAreaPage from './pages/CommonAreaPage';
+import PastDebtsPage from './pages/PastDebtsPage';
 
 function AppRoutes() {
   const { currentUser, userData, loading } = useAuth();
@@ -105,6 +106,16 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <CommonAreaPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Past Debts */}
+      <Route
+        path="/past-debts"
+        element={
+          <ProtectedRoute adminOnly>
+            <PastDebtsPage />
           </ProtectedRoute>
         }
       />

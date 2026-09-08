@@ -44,6 +44,7 @@ export const checkDuplicatePayment = async (userId, month, year) => {
 /**
  * Check if payment already exists for house in specific month/year
  * This checks if ANY payment exists for the house (resident or admin uploaded)
+ * Handles offset payments (isForOtherMonth) - only blocks if payment covers this month
  * IMPORTANT: Does NOT use cache - always reads fresh from Firestore
  */
 export const checkDuplicatePaymentByHouse = async (houseNumber, month, year) => {
@@ -53,13 +54,37 @@ export const checkDuplicatePaymentByHouse = async (houseNumber, month, year) => 
       where('houseNumber', '==', houseNumber),
       where('month', '==', month),
       where('year', '==', year),
-      limit(1) // Only need to know if it exists
+      limit(5)
     );
     
     const snapshot = await getDocs(q);
-    const exists = !snapshot.empty;
+    
+    if (snapshot.empty) return false;
 
-    return exists;
+    // Check each payment found
+    for (const paymentDoc of snapshot.docs) {
+      const payment = paymentDoc.data();
+      
+      // Placeholder payments count as duplicate (they mark months as covered)
+      if (payment.isPlaceholder) {
+        return true;
+      }
+      
+      // Normal payments (not offset) count as duplicate
+      if (!payment.isForOtherMonth) {
+        return true;
+      }
+      
+      // Offset payments: only block if they cover the current month
+      if (payment.isForOtherMonth && payment.coveredMonths) {
+        if (payment.coveredMonths.includes(month)) {
+          return true;
+        }
+      }
+    }
+    
+    // No payment covers this month
+    return false;
   } catch (error) {
     console.error('Error al verificar pago por casa:', error);
     throw error;
@@ -238,8 +263,13 @@ export const updatePaymentStatus = async (paymentId, updates) => {
  * Create a manual payment (admin only) without userId
  * Automatically links to user if they're already registered
  * If not registered yet, payment stays with userId: null until user registers
+ * Supports offset payments (isForOtherMonth) with placeholder records for covered months
  */
-export const createManualPayment = async (houseNumber, amount, month, year, createdByUserId, isLate = false, status = 'pending', adminNotes = '') => {
+export const createManualPayment = async (
+  houseNumber, amount, month, year, createdByUserId,
+  isLate = false, status = 'pending', adminNotes = '',
+  isForOtherMonth = false, coveredMonths = []
+) => {
   try {
     const paymentData = {
       houseNumber,
@@ -254,6 +284,8 @@ export const createManualPayment = async (houseNumber, amount, month, year, crea
       manuallyCreated: true,
       linkedAt: null, // Will be set when linked to user
       receiptUrl: null,
+      isForOtherMonth,
+      coveredMonths: isForOtherMonth ? coveredMonths : [],
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now()
     };
@@ -261,6 +293,47 @@ export const createManualPayment = async (houseNumber, amount, month, year, crea
     const docRef = await addDoc(collection(db, 'payments'), paymentData);
     const paymentId = docRef.id;
     let isLinked = false;
+
+    // Create placeholder $0 payments for each covered month
+    if (isForOtherMonth && coveredMonths.length > 0) {
+      for (const monthNum of coveredMonths) {
+        const placeholderData = {
+          houseNumber,
+          amount: 0,
+          month: monthNum,
+          year,
+          userId: null,
+          createdBy: createdByUserId,
+          isLate: false,
+          status: 'approved',
+          adminNotes: `Placeholder - Pago cubierto por pago del mes ${month}/${year}`,
+          manuallyCreated: true,
+          linkedAt: null,
+          receiptUrl: null,
+          isForOtherMonth: false,
+          coveredMonths: [],
+          isPlaceholder: true,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now()
+        };
+
+        const placeholderRef = await addDoc(collection(db, 'payments'), placeholderData);
+
+        // Try to link placeholder to user if registered
+        try {
+          const user = await getUserByHouseNumber(houseNumber);
+          if (user && user.uid) {
+            await updateDoc(doc(db, 'payments', placeholderRef.id), {
+              userId: user.uid,
+              linkedAt: Timestamp.now(),
+              updatedAt: Timestamp.now()
+            });
+          }
+        } catch (linkError) {
+          console.error('Error al vincular placeholder:', linkError);
+        }
+      }
+    }
 
     // Try to link to user if they're already registered
     try {

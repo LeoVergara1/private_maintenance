@@ -24,6 +24,8 @@ export default function ManualPaymentPanel({ onPaymentCreated }) {
   const [status, setStatus] = useState('pending');
   const [adminNotes, setAdminNotes] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
+  const [isForOtherMonth, setIsForOtherMonth] = useState(false);
+  const [coveredMonths, setCoveredMonths] = useState([]);
 
   // Load all payments when component mounts
   useEffect(() => {
@@ -87,7 +89,9 @@ export default function ManualPaymentPanel({ onPaymentCreated }) {
         currentUser.uid,
         isLate,
         status,
-        adminNotes
+        adminNotes,
+        isForOtherMonth,
+        coveredMonths
       );
 
       // Upload receipt if file was provided
@@ -116,6 +120,8 @@ export default function ManualPaymentPanel({ onPaymentCreated }) {
       setStatus('pending');
       setAdminNotes('');
       setSelectedFile(null);
+      setIsForOtherMonth(false);
+      setCoveredMonths([]);
 
       setTimeout(() => {
         setSuccess('');
@@ -267,6 +273,61 @@ export default function ManualPaymentPanel({ onPaymentCreated }) {
               Marcar como pago tardío
             </label>
           </div>
+
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="isForOtherMonth"
+              checked={isForOtherMonth}
+              onChange={(e) => {
+                setIsForOtherMonth(e.target.checked);
+                if (!e.target.checked) setCoveredMonths([]);
+              }}
+              disabled={loading}
+              className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 disabled:opacity-50"
+            />
+            <label htmlFor="isForOtherMonth" className="text-sm font-medium text-gray-700">
+              El pago corresponde a otros meses
+            </label>
+          </div>
+
+          {isForOtherMonth && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Meses que cubre este pago
+              </label>
+              <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+                {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
+                  <label
+                    key={month}
+                    className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors ${
+                      coveredMonths.includes(month)
+                        ? 'bg-blue-50 border-blue-500 text-blue-700'
+                        : 'bg-white border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={coveredMonths.includes(month)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setCoveredMonths([...coveredMonths, month]);
+                        } else {
+                          setCoveredMonths(coveredMonths.filter(m => m !== month));
+                        }
+                      }}
+                      disabled={loading}
+                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                    />
+                    <span className="text-sm">{getMonthName(month)}</span>
+                  </label>
+                ))}
+              </div>
+              <p className="mt-2 text-xs text-gray-500">
+                Selecciona los meses que este pago cubre. Se crearán registros de $0 para cada mes seleccionado.
+              </p>
+            </div>
+          )}
 
           <div>
             <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">

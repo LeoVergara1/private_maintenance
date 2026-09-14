@@ -15,6 +15,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../config/firebase';
 import { getCachedData, setCachedData, clearCache } from '../utils/cacheManager';
 import { getUserByHouseNumber } from './userService';
+import { generateReceiptNumber } from '../utils/receiptGenerator';
 
 /**
  * Check if payment already exists for user in specific month/year
@@ -286,6 +287,7 @@ export const createManualPayment = async (
       manuallyCreated: true,
       linkedAt: null, // Will be set when linked to user
       receiptUrl: null,
+      receiptNumber: amount > 0 ? generateReceiptNumber() : null,
       isForOtherMonth,
       coveredMonths: isForOtherMonth ? coveredMonths : [],
       createdAt: Timestamp.now(),
@@ -297,8 +299,13 @@ export const createManualPayment = async (
     let isLinked = false;
 
     // Create placeholder $0 payments for each covered month
-    if (isForOtherMonth && coveredMonths.length > 0) {
-      for (const monthNum of coveredMonths) {
+    // Exclude the current payment month to avoid duplicates
+    const monthsForPlaceholders = isForOtherMonth
+      ? coveredMonths.filter(m => m !== month)
+      : [];
+
+    if (monthsForPlaceholders.length > 0) {
+      for (const monthNum of monthsForPlaceholders) {
         const placeholderData = {
           houseNumber,
           amount: 0,

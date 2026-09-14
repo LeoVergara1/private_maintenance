@@ -13,7 +13,9 @@ export const generateReceiptHTML = (paymentData) => {
     year,
     isLate,
     createdAt,
-    receiptNumber
+    receiptNumber,
+    isForOtherMonth,
+    coveredMonths
   } = paymentData;
 
   const formattedDate = new Date(createdAt).toLocaleDateString('es-MX', {
@@ -131,6 +133,13 @@ export const generateReceiptHTML = (paymentData) => {
             ">
               ${getMonthName(month)} ${year}
             </p>
+            <p style="
+              margin: 3px 0 0 0;
+              color: #6b7280;
+              font-size: 11px;
+            ">
+              (1 al 15 del mes)
+            </p>
           </div>
 
           <div>
@@ -172,6 +181,33 @@ export const generateReceiptHTML = (paymentData) => {
         </div>
       </div>
 
+      <!-- Covered Months (for offset payments) -->
+      ${isForOtherMonth && coveredMonths && coveredMonths.length > 0 ? `
+        <div style="
+          margin-bottom: 30px;
+          background: #eff6ff;
+          border-left: 4px solid #3b82f6;
+          padding: 15px;
+          border-radius: 4px;
+        ">
+          <p style="
+            margin: 0 0 8px 0;
+            color: #1e40af;
+            font-size: 13px;
+            font-weight: 600;
+          ">
+            Meses cubiertos por este pago
+          </p>
+          <p style="
+            margin: 0;
+            color: #1e40af;
+            font-size: 14px;
+          ">
+            ${coveredMonths.map(m => getMonthName(m)).join(', ')} ${year}
+          </p>
+        </div>
+      ` : ''}
+
       <!-- Late Payment Notice -->
       ${isLate ? `
         <div style="
@@ -194,7 +230,7 @@ export const generateReceiptHTML = (paymentData) => {
             color: #7f1d1d;
             font-size: 12px;
           ">
-            Este pago fue registrado después del período de pago (1-10 del mes).
+            Este pago fue registrado después del período de pago (1-15 del mes).
           </p>
         </div>
       ` : `
@@ -218,7 +254,7 @@ export const generateReceiptHTML = (paymentData) => {
             color: #166534;
             font-size: 12px;
           ">
-            Pago registrado dentro del período permitido (1-10 del mes).
+            Pago registrado dentro del período permitido (1-15 del mes).
           </p>
         </div>
       `}

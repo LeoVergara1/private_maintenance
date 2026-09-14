@@ -17,7 +17,7 @@ import {
 } from '../utils/dateValidation';
 import { validateFile } from '../utils/fileValidation';
 import { compressImage, formatFileSize } from '../utils/imageOptimization';
-import { generateReceiptNumber } from '../utils/receiptGenerator';
+import { generateReceiptNumber, generateReceiptHTML } from '../utils/receiptGenerator';
 import ReceiptModal from '../components/ReceiptModal';
 import PaymentConfirmationModal from '../components/PaymentConfirmationModal';
 
@@ -371,9 +371,14 @@ export default function ResidentDashboard() {
                       >
                         Ver Comprobante →
                       </button>
-                      {payment.receiptNumber && (
+                      {payment.amount > 0 && (
                         <button
-                          onClick={() => setViewingReceiptPayment(payment)}
+                          onClick={() => setViewingReceiptPayment({
+                            ...payment,
+                            receiptNumber: payment.receiptNumber || generateReceiptNumber(),
+                            isForOtherMonth: payment.isForOtherMonth || false,
+                            coveredMonths: payment.coveredMonths || []
+                          })}
                           className="flex-1 text-green-600 hover:text-green-700 text-sm font-medium"
                         >
                           Ver Recibo →

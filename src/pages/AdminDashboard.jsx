@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
-import { getAllPaymentsByYear, deletePayment } from '../services/paymentService';
+import { getAllPaymentsByYear, deletePayment, updatePaymentStatus } from '../services/paymentService';
 import { getExpensesByYear } from '../services/expensesService';
 import { getInitialDepositsByYear } from '../services/initialDepositService';
 import { getCurrentYear, getMonthName } from '../utils/dateValidation';
 import { exportPaymentsToExcel } from '../utils/excelExport';
+import { generateReceiptNumber } from '../utils/receiptGenerator';
 import PaymentStatusModal from '../components/PaymentStatusModal';
 import ReceiptModal from '../components/ReceiptModal';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
@@ -50,7 +51,24 @@ export default function AdminDashboard() {
     try {
       setLoading(true);
       const allPayments = await getAllPaymentsByYear(filterYear);
-      setPayments(allPayments);
+
+      // Add receiptNumber to payments that don't have one (amount > 0)
+      const paymentsWithReceipts = await Promise.all(
+        allPayments.map(async (payment) => {
+          if (payment.amount > 0 && !payment.receiptNumber) {
+            const newReceiptNumber = generateReceiptNumber();
+            try {
+              await updatePaymentStatus(payment.id, { receiptNumber: newReceiptNumber });
+            } catch (err) {
+              console.error('Error al agregar receiptNumber:', err);
+            }
+            return { ...payment, receiptNumber: newReceiptNumber };
+          }
+          return payment;
+        })
+      );
+
+      setPayments(paymentsWithReceipts);
 
       // Load expenses (with fallback)
       try {

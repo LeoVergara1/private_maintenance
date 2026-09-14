@@ -165,5 +165,20 @@ service cloud.firestore {
       // Only admins can delete
       allow delete: if isAdmin();
     }
+
+    // Bank Statements collection rules
+    match /bankStatements/{statementId} {
+      // All authenticated users can read bank statements (needed for financial reports)
+      allow read: if isAuthenticated();
+      
+      // Only admins can create bank statements
+      allow create: if isAdmin();
+      
+      // Only admins can update bank statements
+      allow update: if isAdmin();
+      
+      // Only admins can delete bank statements
+      allow delete: if isAdmin();
+    }
   }
 }

@@ -41,6 +41,18 @@ Firebase Project
 │           ├── createdAt: Timestamp
 │           └── updatedAt: Timestamp
 │
+│   └── bankStatements/
+│       └── {statementId}/
+│           ├── month: number (1-12)
+│           ├── year: number
+│           ├── fileName: string
+│           ├── fileUrl: string
+│           ├── originalName: string
+│           ├── uploadedBy: string
+│           ├── notes: string (optional)
+│           ├── createdAt: Timestamp
+│           └── updatedAt: Timestamp
+│
 └── Storage
     └── receipts/
         └── {userId}/
@@ -202,6 +214,46 @@ const q = query(
 
 ---
 
+## Colección: bankStatements
+
+### Propósito
+Almacena los estados de cuenta del banco subidos por el administrador.
+
+### Campos
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `month` | number | Mes del estado de cuenta (1-12) |
+| `year` | number | Año del estado de cuenta |
+| `fileName` | string | Nombre del archivo en Storage |
+| `fileUrl` | string | URL de descarga del archivo |
+| `originalName` | string | Nombre original del archivo subido |
+| `uploadedBy` | string | UID del administrador que subió el archivo |
+| `notes` | string | Notas opcionales sobre el estado de cuenta |
+| `createdAt` | Timestamp | Fecha de creación |
+| `updatedAt` | Timestamp | Fecha de última actualización |
+
+### Consultas Comunes
+
+```javascript
+// Obtener estados de cuenta por año
+const q = query(
+  collection(db, 'bankStatements'),
+  where('year', '==', 2026),
+  orderBy('createdAt', 'desc')
+);
+
+// Obtener estados de cuenta por mes y año
+const q = query(
+  collection(db, 'bankStatements'),
+  where('month', '==', 9),
+  where('year', '==', 2026),
+  orderBy('createdAt', 'desc')
+);
+```
+
+---
+
 ## Storage: receipts
 
 ### Propósito
@@ -240,6 +292,45 @@ receipts/
 | PDF | application/pdf | Documentos escaneados |
 
 ### Límites
+
+---
+
+## Storage: bankStatements
+
+### Propósito
+Almacena los estados de cuenta del banco subidos por el administrador.
+
+### Estructura de Carpetas
+
+```
+bankStatements/
+└── {year}/
+    ├── 2026-9-1725849600000.pdf
+    ├── 2026-9-1725849600000.xlsx
+    └── 2026-10-1728441600000.csv
+```
+
+### Nomenclatura de Archivos
+
+**Patrón**: `{year}-{month}-{timestamp}.{extension}`
+
+- `year`: Año del estado de cuenta
+- `month`: Mes del estado de cuenta (1-12)
+- `timestamp`: Timestamp de subida para unicidad
+- `extension`: Extensión del archivo (pdf, xlsx, xls, csv)
+
+**Ejemplos**:
+- `2026-9-1725849600000.pdf` - Estado de cuenta septiembre 2026
+- `2026-10-1728441600000.xlsx` - Estado de cuenta octubre 2026
+
+### Formatos Permitidos
+
+| Formato | MIME Type | Uso |
+|---------|-----------|-----|
+| PDF | application/pdf | Estados de cuenta en PDF |
+| XLSX | application/vnd.openxmlformats-officedocument.spreadsheetml.sheet | Estados de cuenta en Excel |
+| XLS | application/vnd.ms-excel | Estados de cuenta en Excel (legacy) |
+| CSV | text/csv | Estados de cuenta en CSV |
 - **Tamaño máximo**: 5MB por archivo
 - **Organización**: Por usuario (carpeta por UID)
 

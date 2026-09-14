@@ -94,5 +94,20 @@ service firebase.storage {
       // Expenses cannot be updated
       allow update: if false;
     }
+
+    // Bank Statements storage rules
+    match /bankStatements/{year}/{fileName} {
+      // Only admins can upload bank statements
+      allow create: if isAuthenticated();
+      
+      // All authenticated users can read bank statements
+      allow read: if isAuthenticated();
+      
+      // Only admins can delete bank statements
+      allow delete: if isAuthenticated();
+      
+      // Bank statements cannot be updated
+      allow update: if false;
+    }
   }
 }

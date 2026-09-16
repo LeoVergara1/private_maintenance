@@ -9,6 +9,7 @@ export default function PastDebtsPanel() {
   const [debts, setDebts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedYear, setSelectedYear] = useState(getCurrentYear());
+  const [selectedMonth, setSelectedMonth] = useState(0); // 0 = todos los meses
   const [expandedHouse, setExpandedHouse] = useState(null);
   const [filterHouse, setFilterHouse] = useState('');
   const [sortByDebt, setSortByDebt] = useState(false);
@@ -109,6 +110,11 @@ export default function PastDebtsPanel() {
     ? debts.filter(d => d.houseNumber === parseInt(filterHouse))
     : [...debts];
 
+  // Filter by selected month
+  if (selectedMonth > 0) {
+    filteredDebts = filteredDebts.filter(d => d.missingMonths.includes(selectedMonth));
+  }
+
   // Sort by debt (most months first) if enabled
   if (sortByDebt) {
     filteredDebts.sort((a, b) => b.missingMonths.length - a.missingMonths.length);
@@ -169,6 +175,16 @@ export default function PastDebtsPanel() {
           >
             {Array.from({ length: 5 }, (_, i) => getCurrentYear() - i).map((year) => (
               <option key={year} value={year}>{year}</option>
+            ))}
+          </select>
+          <select
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value={0}>Todos los meses</option>
+            {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+              <option key={month} value={month}>{getMonthName(month)}</option>
             ))}
           </select>
         </div>

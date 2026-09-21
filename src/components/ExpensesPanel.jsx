@@ -164,6 +164,41 @@ export default function ExpensesPanel({ onExpenseCreated }) {
     });
   };
 
+  const handleExportCSV = () => {
+    const currentYearExpenses = expenses.filter(exp => exp.year === currentYear);
+    
+    if (currentYearExpenses.length === 0) {
+      alert('No hay gastos para exportar');
+      return;
+    }
+
+    const headers = ['Fecha', 'Descripción', 'Mes', 'Monto', 'Comprobante'];
+    const rows = currentYearExpenses
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .map(expense => {
+        const createdDate = new Date(expense.createdAt?.seconds ? expense.createdAt.seconds * 1000 : expense.createdAt);
+        return [
+          createdDate.toLocaleDateString('es-ES'),
+          `"${expense.description.replace(/"/g, '""')}"`,
+          getMonthName(expense.month),
+          expense.amount.toFixed(2),
+          expense.receiptUrl || ''
+        ];
+      });
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `gastos-${currentYear}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <div className="flex items-center justify-between mb-6">
@@ -174,16 +209,28 @@ export default function ExpensesPanel({ onExpenseCreated }) {
           </h2>
           <p className="text-sm text-gray-600 mt-1">Registra gastos comunes y adjunta comprobante</p>
         </div>
-        <button
-          onClick={() => {
-            setShowForm(!showForm);
-            setError('');
-            setSuccess('');
-          }}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-        >
-          {showForm ? 'Cancelar' : 'Nuevo Gasto'}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleExportCSV}
+            disabled={expenses.filter(exp => exp.year === currentYear).length === 0}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Descargar CSV
+          </button>
+          <button
+            onClick={() => {
+              setShowForm(!showForm);
+              setError('');
+              setSuccess('');
+            }}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          >
+            {showForm ? 'Cancelar' : 'Nuevo Gasto'}
+          </button>
+        </div>
       </div>
 
       {/* Alerts */}

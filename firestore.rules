@@ -149,6 +149,21 @@ service cloud.firestore {
 
     // Common Area Reservations collection rules
     match /commonAreaReservations/{reservationId} {
+      function canResidentCancelReservation() {
+        let creatorId = resource.data.get('createdBy', 'unknown');
+        let creatorPath = /databases/$(database)/documents/users/$(creatorId);
+
+        return isAuthenticated() &&
+               resource.data.houseNumber == getUserHouseNumber() &&
+               resource.data.status == 'confirmed' &&
+               request.resource.data.status == 'cancelled' &&
+               request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['status', 'cancellationReason', 'updatedAt']) &&
+               (creatorId == request.auth.uid ||
+                 (exists(creatorPath) &&
+                  get(creatorPath).data.role in ['admin', 'gate_manager']));
+      }
+
       // All authenticated users can read all reservations (needed for calendar view)
       allow read: if isAuthenticated();
       
@@ -158,9 +173,8 @@ service cloud.firestore {
       allow create: if isAuthenticated() && !isUserRestricted() && 
                        ((request.resource.data.houseNumber == getUserHouseNumber()) || isAdmin());
       
-      // Update only by creator or admin (mainly for status/cancellation)
-      allow update: if isAuthenticated() && 
-                       (request.resource.data.createdBy == request.auth.uid || isAdmin());
+      // Residents can only cancel their own or staff-created reservations for their house
+      allow update: if isAdmin() || canResidentCancelReservation();
       
       // Only admins can delete
       allow delete: if isAdmin();

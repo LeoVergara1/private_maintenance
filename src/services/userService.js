@@ -1,4 +1,4 @@
-import { doc, setDoc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
 /**
@@ -88,6 +88,25 @@ export const getUserByHouseNumber = async (houseNumber) => {
     console.error('Error al obtener usuario por casa:', error);
     throw error;
   }
+};
+/**
+ * Update a user's house number (admin). Validates range 1-60 and uniqueness.
+ * Solo admin (regla Firestore `users`).
+ */
+export const updateUserHouse = async (uid, houseNumber) => {
+  const houseNum = parseInt(houseNumber, 10);
+  if (!uid) throw new Error('uid requerido.');
+  if (!Number.isInteger(houseNum) || houseNum < 1 || houseNum > 60) {
+    throw new Error('El número de casa debe estar entre 1 y 60.');
+  }
+  const q = query(collection(db, 'users'), where('houseNumber', '==', houseNum));
+  const snapshot = await getDocs(q);
+  const occupiedByOther = snapshot.docs.some((d) => d.id !== uid);
+  if (occupiedByOther) {
+    throw new Error(`La casa ${houseNum} ya está registrada por otro usuario.`);
+  }
+  await updateDoc(doc(db, 'users', uid), { houseNumber: houseNum });
+  return houseNum;
 };
 /**
  * Get all unregistered houses (1-60)

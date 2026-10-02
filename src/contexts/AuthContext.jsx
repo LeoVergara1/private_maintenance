@@ -6,6 +6,7 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, googleProvider, db } from '../config/firebase';
+import { FALLBACK_ROLE_VIEWS } from '../config/views';
 
 const AuthContext = createContext();
 
@@ -20,6 +21,8 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [userData, setUserData] = useState(null);
+  const [roleConfig, setRoleConfig] = useState(null);
+  const [roleViews, setRoleViews] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Sign in with Google
@@ -39,21 +42,42 @@ export const AuthProvider = ({ children }) => {
       await firebaseSignOut(auth);
       setCurrentUser(null);
       setUserData(null);
+      setRoleConfig(null);
+      setRoleViews([]);
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
       throw error;
     }
   };
 
-  // Load user data from Firestore
+  // Load user data from Firestore (+ role permissions from `roles/{role}`)
   const loadUserData = async (uid) => {
     try {
       const userDocRef = doc(db, 'users', uid);
       const userDoc = await getDoc(userDocRef);
-      
+
       if (userDoc.exists()) {
-        setUserData(userDoc.data());
-        return userDoc.data();
+        const data = userDoc.data();
+        setUserData(data);
+
+        // Cargar permisos dinámicos del rol (colección `roles`).
+        // Fallback al mapa local si el doc aún no existe (migración).
+        try {
+          const roleId = data.role || 'resident';
+          const roleSnap = await getDoc(doc(db, 'roles', roleId));
+          if (roleSnap.exists()) {
+            const cfg = { id: roleSnap.id, ...roleSnap.data() };
+            setRoleConfig(cfg);
+            setRoleViews(Array.isArray(cfg.views) ? cfg.views : []);
+            return { ...data, roleViews: cfg.views || [] };
+          }
+        } catch (roleError) {
+          console.warn('No se pudo cargar el rol dinámico, usando fallback:', roleError);
+        }
+        const fallback = FALLBACK_ROLE_VIEWS[data.role] || FALLBACK_ROLE_VIEWS.resident;
+        setRoleConfig(null);
+        setRoleViews(fallback);
+        return { ...data, roleViews: fallback };
       }
       return null;
     } catch (error) {
@@ -78,6 +102,8 @@ export const AuthProvider = ({ children }) => {
         await loadUserData(user.uid);
       } else {
         setUserData(null);
+        setRoleConfig(null);
+        setRoleViews([]);
       }
       
       setLoading(false);
@@ -89,10 +115,18 @@ export const AuthProvider = ({ children }) => {
   const value = {
     currentUser,
     userData,
+    roleConfig,
+    roleViews,
     loading,
     signInWithGoogle,
     signOut,
-    refreshUserData
+    refreshUserData,
+    // Helper: ¿el usuario actual puede ver esta ruta?
+    // Admin siempre tiene acceso total (compatibilidad + bootstrap).
+    hasAccess: (path) => {
+      if (userData?.role === 'admin') return true;
+      return roleViews.includes(path);
+    },
   };
 
   return (

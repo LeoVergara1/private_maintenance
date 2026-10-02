@@ -61,6 +61,19 @@ service cloud.firestore {
       // No one can delete users
       allow delete: if false;
     }
+
+    // Roles collection rules (administración dinámica de menús/vistas)
+    // Doc: roles/{roleId} = { label, description, views: string[], isSystem, createdAt, updatedAt }
+    match /roles/{roleId} {
+      // Todos los autenticados pueden leer (necesario para construir el Sidebar al cargar el usuario)
+      allow read: if isAuthenticated();
+      allow list: if isAuthenticated();
+
+      // Solo admin puede crear / modificar / eliminar roles
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
     
     // Payments collection rules
     match /payments/{paymentId} {

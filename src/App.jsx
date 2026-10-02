@@ -10,6 +10,7 @@ import GateControlsPage from './pages/GateControlsPage';
 import UtilitiesPage from './pages/UtilitiesPage';
 import CommonAreaPage from './pages/CommonAreaPage';
 import PastDebtsPage from './pages/PastDebtsPage';
+import RolesPage from './pages/RolesPage';
 
 function AppRoutes() {
   const { currentUser, userData, loading } = useAuth();
@@ -54,7 +55,7 @@ function AppRoutes() {
       <Route
         path="/dashboard"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute viewPath="/dashboard">
             <ResidentDashboard />
           </ProtectedRoute>
         }
@@ -64,7 +65,7 @@ function AppRoutes() {
       <Route
         path="/admin"
         element={
-          <ProtectedRoute adminOnly>
+          <ProtectedRoute adminOnly viewPath="/admin">
             <AdminDashboard />
           </ProtectedRoute>
         }
@@ -74,7 +75,7 @@ function AppRoutes() {
       <Route
         path="/financial-report"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute viewPath="/financial-report">
             <AdminFinancialReport />
           </ProtectedRoute>
         }
@@ -84,7 +85,7 @@ function AppRoutes() {
       <Route
         path="/gate-controls"
         element={
-          <ProtectedRoute gateManagerOnly>
+          <ProtectedRoute gateManagerOnly viewPath="/gate-controls">
             <GateControlsPage />
           </ProtectedRoute>
         }
@@ -94,7 +95,7 @@ function AppRoutes() {
       <Route
         path="/utilities"
         element={
-          <ProtectedRoute gateManagerOnly>
+          <ProtectedRoute gateManagerOnly viewPath="/utilities">
             <UtilitiesPage />
           </ProtectedRoute>
         }
@@ -104,7 +105,7 @@ function AppRoutes() {
       <Route
         path="/common-area"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute viewPath="/common-area">
             <CommonAreaPage />
           </ProtectedRoute>
         }
@@ -114,8 +115,18 @@ function AppRoutes() {
       <Route
         path="/past-debts"
         element={
-          <ProtectedRoute adminOnly>
+          <ProtectedRoute adminOnly viewPath="/past-debts">
             <PastDebtsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Roles y Permisos (solo admin) */}
+      <Route
+        path="/roles"
+        element={
+          <ProtectedRoute adminOnly viewPath="/roles">
+            <RolesPage />
           </ProtectedRoute>
         }
       />

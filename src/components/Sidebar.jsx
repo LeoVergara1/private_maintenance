@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { APP_VIEWS, APP_VIEWS_MAP, FALLBACK_ROLE_VIEWS } from '../config/views';
 
 // ── Icons ──────────────────────────────────────────────
 
@@ -47,7 +48,27 @@ const IconDebts = () => (
   </svg>
 );
 
-// ── Nav configuration per role ─────────────────────────
+const IconShield = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+  </svg>
+);
+
+const ICON_COMPONENTS = {
+  payments: <IconPayments />,
+  gate: <IconGate />,
+  report: <IconReport />,
+  admin: <IconAdmin />,
+  utilities: <IconUtilities />,
+  commonArea: <IconCommonArea />,
+  debts: <IconDebts />,
+  shield: <IconShield />,
+};
+
+// ── Nav configuration ────────────────────────────────────
+// Dinámico: se construye desde `roleViews` (Firestore `roles/{role}.views`)
+// con fallback al mapa local. NAV_ITEMS_LEGACY se conserva solo como
+// respaldo durante la migración.
 
 const NAV_ITEMS = {
   admin: [
@@ -57,6 +78,7 @@ const NAV_ITEMS = {
     { label: 'Controles del Portón',  path: '/gate-controls',    icon: <IconGate /> },
     { label: 'Reporte Financiero',    path: '/financial-report', icon: <IconReport /> },
     { label: 'Utilidades',            path: '/utilities',        icon: <IconUtilities /> },
+    { label: 'Roles y Permisos',      path: '/roles',            icon: <IconShield /> },
   ],
   gate_manager: [
     { label: 'Mis Pagos',             path: '/dashboard',        icon: <IconPayments /> },
@@ -81,24 +103,52 @@ const ROLE_LABELS = {
   admin:        'Administrador',
   gate_manager: 'Encargado del Portón',
   resident:     'Residente',
+  resident_beta: 'Residente Beta',
 };
 
 const ROLE_COLORS = {
   admin:        'bg-blue-100 text-blue-700',
   gate_manager: 'bg-green-100 text-green-700',
   resident:     'bg-gray-100 text-gray-600',
+  resident_beta:'bg-purple-100 text-purple-700',
 };
 
 // ── Component ──────────────────────────────────────────
 
 export default function Sidebar() {
   const [open, setOpen] = useState(false);
-  const { userData, signOut } = useAuth();
+  const { userData, roleConfig, roleViews, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const role = userData?.role || 'resident';
-  const navItems = NAV_ITEMS[role] || NAV_ITEMS.resident;
+
+  // Vistas permitidas: Firestore (roleViews) > fallback local > legacy hardcode.
+  const allowedPaths =
+    (Array.isArray(roleViews) && roleViews.length > 0
+      ? roleViews
+      : FALLBACK_ROLE_VIEWS[role] || FALLBACK_ROLE_VIEWS.resident);
+
+  const navItems = allowedPaths
+    .map((path) => {
+      const view = APP_VIEWS_MAP[path];
+      if (!view) return null;
+      return {
+        path: view.path,
+        label:
+          // Etiqueta especial: residentes ven "Ver Desglose" en el reporte
+          view.path === '/financial-report' &&
+          (role === 'resident' || role === 'resident_beta') &&
+          !roleConfig
+            ? 'Ver Desglose'
+            : view.label,
+        icon: ICON_COMPONENTS[view.icon] || <IconAdmin />,
+      };
+    })
+    .filter(Boolean);
+
+  const roleLabel = roleConfig?.label || ROLE_LABELS[role] || role;
+  const roleBadgeClass = ROLE_COLORS[role] || 'bg-gray-100 text-gray-600';
 
   const handleSignOut = async () => {
     try {
@@ -156,8 +206,8 @@ export default function Sidebar() {
             {userData?.displayName || userData?.email}
           </p>
           <p className="text-xs text-gray-500 mt-0.5">Casa {userData?.houseNumber}</p>
-          <span className={`inline-block mt-2 px-2 py-0.5 rounded-full text-xs font-medium ${ROLE_COLORS[role]}`}>
-            {ROLE_LABELS[role]}
+          <span className={`inline-block mt-2 px-2 py-0.5 rounded-full text-xs font-medium ${roleBadgeClass}`}>
+            {roleLabel}
           </span>
         </div>
         <button

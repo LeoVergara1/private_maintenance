@@ -48,8 +48,16 @@ export default function PastDebtsPanel() {
         const missingMonths = [];
 
         for (const month of monthsToCheck) {
-          // Find payments for this month
-          const monthPayments = housePayments.filter(p => p.month === month);
+          // Find payments for this month (directos o que lo cubren desde otro
+          // mes: anticipados del residente u offsets del admin). El guard de
+          // coveredYear evita que un doc de otro año cubra este periodo.
+          const monthPayments = housePayments.filter(p =>
+            p.month === month ||
+            (p.isForOtherMonth &&
+              Array.isArray(p.coveredMonths) &&
+              p.coveredMonths.includes(month) &&
+              (p.coveredYear ?? p.year) === selectedYear)
+          );
 
           if (monthPayments.length === 0) {
             // No payment at all for this month → debt

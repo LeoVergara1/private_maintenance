@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
-import { getAllPaymentsByYear, deletePayment, updatePaymentStatus } from '../services/paymentService';
+import { getAllPaymentsByYear, deletePayment, deleteAdvancePayment, updatePaymentStatus } from '../services/paymentService';
 import { getExpensesByYear } from '../services/expensesService';
 import { getInitialDepositsByYear } from '../services/initialDepositService';
 import { getCurrentYear, getMonthName } from '../utils/dateValidation';
@@ -137,7 +137,12 @@ export default function AdminDashboard() {
     
     setDeleteLoading(true);
     try {
-      await deletePayment(selectedDeletePayment.id);
+      // Los anticipos se eliminan junto con su placeholder simbólico
+      if (selectedDeletePayment.isAdvance) {
+        await deleteAdvancePayment(selectedDeletePayment);
+      } else {
+        await deletePayment(selectedDeletePayment.id);
+      }
       setSelectedDeletePayment(null);
       await loadPayments();
     } catch (error) {

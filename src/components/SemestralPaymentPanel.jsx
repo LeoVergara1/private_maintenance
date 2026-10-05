@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { createSemestralPayment } from '../services/paymentService';
 import { getCurrentMonth, getCurrentYear, getMonthName } from '../utils/dateValidation';
 import { validateFile } from '../utils/fileValidation';
@@ -12,8 +12,6 @@ export default function SemestralPaymentPanel({ onPaymentCreated }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [allPayments, setAllPayments] = useState([]);
-
   // Form state
   const [houseNumber, setHouseNumber] = useState('');
   const [amount, setAmount] = useState(1800);
@@ -24,19 +22,6 @@ export default function SemestralPaymentPanel({ onPaymentCreated }) {
   const [selectedFile, setSelectedFile] = useState(null);
 
   const currentMonth = getCurrentMonth();
-
-  // Load all payments when component mounts
-  useEffect(() => {
-    const loadPayments = async () => {
-      try {
-        const payments = await getAllPaymentsByYear(getCurrentYear());
-        setAllPayments(payments);
-      } catch (err) {
-        console.error('Error al cargar pagos:', err);
-      }
-    };
-    loadPayments();
-  }, []);
 
   const handleMonthToggle = (month) => {
     setSelectedMonths(prev => {

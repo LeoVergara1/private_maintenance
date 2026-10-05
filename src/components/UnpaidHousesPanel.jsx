@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getAllUsers } from '../services/userService';
-import { getPaymentsByMonthYear } from '../services/paymentService';
+import { getPaymentsByMonthYear, getCoveringPayments } from '../services/paymentService';
 import { getCurrentMonth, getCurrentYear, getMonthName } from '../utils/dateValidation';
 import { exportUnpaidHousesToExcel } from '../utils/excelExport';
 
@@ -25,9 +25,22 @@ export default function UnpaidHousesPanel() {
 
       // Get payments for current month
       const payments = await getPaymentsByMonthYear(currentMonth, currentYear);
-      
+
+      // Pagos anticipados / offsets que cubren el mes actual desde otro mes
+      // (ej. octubre adelantado en septiembre)
+      let coveringHouses = [];
+      try {
+        const covering = await getCoveringPayments(currentMonth, currentYear);
+        coveringHouses = covering.map(p => p.houseNumber);
+      } catch (coverError) {
+        console.warn('No se pudieron cargar pagos con cobertura:', coverError);
+      }
+
       // Get house numbers that have paid
-      const paidHouseNumbers = payments.map(p => p.houseNumber);
+      const paidHouseNumbers = [...new Set([
+        ...payments.map(p => p.houseNumber),
+        ...coveringHouses
+      ])];
 
       // Filter users who haven't paid
       const unpaid = allUsers.filter(user => 

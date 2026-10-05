@@ -1,19 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
-import { 
-  checkDuplicatePayment, 
+import {
+  checkDuplicatePayment,
   checkDuplicatePaymentByHouse,
-  uploadReceipt, 
-  createPayment, 
+  checkAdvanceExists,
+  createAdvancePayment,
+  uploadReceipt,
+  createPayment,
   getPaymentsByYear,
   getPaymentsByHouseAndYear
 } from '../services/paymentService';
-import { 
-  getCurrentMonth, 
-  getCurrentYear, 
-  isLatePayment, 
-  getMonthName 
+import {
+  getCurrentMonth,
+  getCurrentYear,
+  isLatePayment,
+  getMonthName,
+  isWithinAdvanceWindow,
+  getNextPeriod,
+  ADVANCE_WINDOW_DAYS
 } from '../utils/dateValidation';
 import { validateFile } from '../utils/fileValidation';
 import { compressImage, formatFileSize } from '../utils/imageOptimization';
@@ -34,14 +39,23 @@ export default function ResidentDashboard() {
   const [selectedReceipt, setSelectedReceipt] = useState(null);
   const [confirmationData, setConfirmationData] = useState(null);
   const [viewingReceiptPayment, setViewingReceiptPayment] = useState(null);
+  const [advanceMode, setAdvanceMode] = useState(false);
+  const [hasAdvanceNext, setHasAdvanceNext] = useState(false);
 
   const currentMonth = getCurrentMonth();
   const currentYear = getCurrentYear();
   const isLate = isLatePayment();
+  const nextPeriod = getNextPeriod(currentMonth, currentYear);
+  const inAdvanceWindow = isWithinAdvanceWindow(ADVANCE_WINDOW_DAYS);
+  const showAdvanceOption = inAdvanceWindow && !hasAdvanceNext;
+  // El formulario se bloquea si ya pagó el mes actual (modo normal)
+  // o si ya adelantó el siguiente (modo anticipado)
+  const isFormBlocked = (!advanceMode && hasPaidThisMonth) || (advanceMode && hasAdvanceNext);
 
   useEffect(() => {
     loadPayments();
     checkCurrentMonthPayment();
+    checkNextMonthAdvance();
     // Set default amount based on whether payment is late
     if (isLate) {
       setAmount(315);
@@ -69,6 +83,27 @@ export default function ResidentDashboard() {
       setHasPaidThisMonth(hasPaid);
     } catch (error) {
       console.error('Error al verificar pago del mes:', error);
+    }
+  };
+
+  const checkNextMonthAdvance = async () => {
+    try {
+      // ¿Ya existe un pago (normal o anticipado) que cubra el siguiente mes?
+      const exists = await checkAdvanceExists(userData.houseNumber, nextPeriod.month, nextPeriod.year);
+      setHasAdvanceNext(exists);
+    } catch (error) {
+      console.error('Error al verificar pago anticipado:', error);
+    }
+  };
+
+  const handleAdvanceToggle = (checked) => {
+    setAdvanceMode(checked);
+    setError('');
+    // El anticipado nunca es tardío: monto base
+    if (checked) {
+      setAmount(300);
+    } else {
+      setAmount(isLate ? 315 : 300);
     }
   };
 
@@ -124,6 +159,63 @@ export default function ResidentDashboard() {
     setLoading(true);
 
     try {
+      // ── Pago anticipado: se registra en el mes real del dinero (conciliación
+      // bancaria) con referencia al mes cubierto, igual que el flujo manual del admin
+      if (advanceMode) {
+        const alreadyCovered = await checkAdvanceExists(
+          userData.houseNumber,
+          nextPeriod.month,
+          nextPeriod.year
+        );
+        if (alreadyCovered) {
+          setError(`Ya registraste el pago anticipado de ${getMonthName(nextPeriod.month)} ${nextPeriod.year}`);
+          setLoading(false);
+          return;
+        }
+
+        const receiptUrl = await uploadReceipt(selectedFile, currentUser.uid, currentMonth, currentYear);
+        const receiptNumber = generateReceiptNumber();
+
+        await createAdvancePayment({
+          userId: currentUser.uid,
+          houseNumber: userData.houseNumber,
+          amount: parseFloat(amount),
+          receiptUrl,
+          month: currentMonth,
+          year: currentYear,
+          targetMonth: nextPeriod.month,
+          targetYear: nextPeriod.year,
+          receiptNumber
+        });
+
+        setSuccess(`Pago anticipado de ${getMonthName(nextPeriod.month)} registrado exitosamente`);
+        setSelectedFile(null);
+        setAmount(300);
+        setAdvanceMode(false);
+
+        setConfirmationData({
+          houseNumber: userData.houseNumber,
+          amount: parseFloat(amount),
+          month: nextPeriod.month,
+          year: nextPeriod.year,
+          isLate: false,
+          isForOtherMonth: true,
+          coveredMonths: [nextPeriod.month],
+          coveredYear: nextPeriod.year,
+          isAdvance: true,
+          receiptNumber,
+          createdAt: new Date()
+        });
+
+        await loadPayments();
+        await checkCurrentMonthPayment();
+        await checkNextMonthAdvance();
+
+        const fileInput = document.getElementById('receipt');
+        if (fileInput) fileInput.value = '';
+        return;
+      }
+
       // Check for duplicate payment
       const isDuplicate = await checkDuplicatePayment(currentUser.uid, currentMonth, currentYear);
       if (isDuplicate) {
@@ -153,7 +245,7 @@ export default function ResidentDashboard() {
       setSuccess('Pago registrado exitosamente');
       setSelectedFile(null);
       setAmount(300);
-      
+
       // Show confirmation modal
       setConfirmationData({
         houseNumber: userData.houseNumber,
@@ -210,7 +302,7 @@ export default function ResidentDashboard() {
     <DashboardLayout>
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Late payment alert */}
-        {isLate && !hasPaidThisMonth && (
+        {isLate && !hasPaidThisMonth && !advanceMode && (
           <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
             <div className="flex items-center">
               <svg className="w-6 h-6 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -243,6 +335,41 @@ export default function ResidentDashboard() {
           </div>
         )}
 
+        {/* Advance already done */}
+        {hasAdvanceNext && (
+          <div className="mb-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
+            <div className="flex items-center">
+              <svg className="w-6 h-6 text-blue-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <h3 className="text-blue-800 font-semibold">Pago Anticipado Registrado</h3>
+                <p className="text-blue-700 text-sm">
+                  Ya adelantaste {getMonthName(nextPeriod.month)} {nextPeriod.year} (pendiente de validación del admin)
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Advance window banner */}
+        {showAdvanceOption && (
+          <div className="mb-6 bg-indigo-50 border-l-4 border-indigo-500 p-4 rounded-lg">
+            <div className="flex items-center">
+              <svg className="w-6 h-6 text-indigo-500 mr-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <h3 className="text-indigo-800 font-semibold">Últimos {ADVANCE_WINDOW_DAYS} días de {getMonthName(currentMonth)}</h3>
+                <p className="text-indigo-700 text-sm">
+                  Si tu transferencia es para {getMonthName(nextPeriod.month)} {nextPeriod.year}, actívalo en el formulario para adelantarla.
+                  Se registrará en {getMonthName(currentMonth)} (cuando entró al banco) con referencia a {getMonthName(nextPeriod.month)}.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Payment form */}
           <div className="bg-white rounded-lg shadow-md p-6">
@@ -256,9 +383,32 @@ export default function ResidentDashboard() {
                 <div className="px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
                   <p className="text-gray-900 font-medium">
                     {getMonthName(currentMonth)} {currentYear}
+                    {advanceMode && (
+                      <span className="text-indigo-700"> → cubre {getMonthName(nextPeriod.month)} {nextPeriod.year}</span>
+                    )}
                   </p>
                 </div>
               </div>
+
+              {showAdvanceOption && (
+                <label className="flex items-start gap-3 p-3 rounded-lg border border-indigo-200 bg-indigo-50/50 cursor-pointer hover:bg-indigo-50 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={advanceMode}
+                    onChange={(e) => handleAdvanceToggle(e.target.checked)}
+                    disabled={loading}
+                    className="mt-1 w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                  />
+                  <span>
+                    <span className="block text-sm font-medium text-gray-900">
+                      Adelantar pago de {getMonthName(nextPeriod.month)} {nextPeriod.year}
+                    </span>
+                    <span className="block text-xs text-gray-500">
+                      Úsalo si tu transferencia ya es para el siguiente mes. No genera recargo por tardío.
+                    </span>
+                  </span>
+                </label>
+              )}
 
               <div>
                 <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-2">
@@ -271,11 +421,11 @@ export default function ResidentDashboard() {
                   onChange={(e) => setAmount(e.target.value)}
                   min="1"
                   step="0.01"
-                  disabled={loading || hasPaidThisMonth}
+                  disabled={loading || isFormBlocked}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
                 <p className="mt-1 text-xs text-gray-500">
-                  {isLate ? 'Monto por pago tardío: $315' : 'Monto base: $300'}
+                  {advanceMode ? 'Monto base: $300 (el anticipado no genera recargo)' : isLate ? 'Monto por pago tardío: $315' : 'Monto base: $300'}
                 </p>
               </div>
 
@@ -288,7 +438,7 @@ export default function ResidentDashboard() {
                   id="receipt"
                   onChange={handleFileChange}
                   accept=".jpg,.jpeg,.png,.heic,.pdf"
-                  disabled={loading || hasPaidThisMonth}
+                  disabled={loading || isFormBlocked}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
                 <p className="mt-1 text-xs text-gray-500">
@@ -310,10 +460,10 @@ export default function ResidentDashboard() {
 
               <button
                 type="submit"
-                disabled={loading || hasPaidThisMonth}
+                disabled={loading || isFormBlocked}
                 className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Registrando...' : 'Registrar Pago'}
+                {loading ? 'Registrando...' : advanceMode ? `Adelantar ${getMonthName(nextPeriod.month)}` : 'Registrar Pago'}
               </button>
             </form>
           </div>
@@ -340,10 +490,24 @@ export default function ResidentDashboard() {
                     key={payment.id}
                     className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-semibold text-gray-900">
-                        {getMonthName(payment.month)} {payment.year}
-                      </h3>
+                    <div className="flex items-center justify-between mb-2 gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-semibold text-gray-900">
+                          {getMonthName(payment.month)} {payment.year}
+                        </h3>
+                        {payment.isPlaceholder ? (
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 whitespace-nowrap">
+                            {payment.advanceId ? 'Cobertura · Anticipado' : 'Referencia'}
+                          </span>
+                        ) : (
+                          (payment.isAdvance || (payment.isForOtherMonth && payment.coveredMonths?.length > 0)) && (
+                            <span className="px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 whitespace-nowrap">
+                              Cubre: {payment.coveredMonths.map((m) => getMonthName(m).substring(0, 3)).join(', ')}
+                              {payment.isAdvance ? ' · Anticipado' : ''}
+                            </span>
+                          )
+                        )}
+                      </div>
                       {getStatusBadge(payment.status)}
                     </div>
                     <div className="space-y-1 text-sm">
@@ -365,12 +529,14 @@ export default function ResidentDashboard() {
                       )}
                     </div>
                     <div className="mt-3 flex gap-2">
-                      <button
-                        onClick={() => setSelectedReceipt({ url: payment.receiptUrl, fileName: '' })}
-                        className="flex-1 text-blue-600 hover:text-blue-700 text-sm font-medium"
-                      >
-                        Ver Comprobante →
-                      </button>
+                      {payment.receiptUrl && (
+                        <button
+                          onClick={() => setSelectedReceipt({ url: payment.receiptUrl, fileName: '' })}
+                          className="flex-1 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                        >
+                          Ver Comprobante →
+                        </button>
+                      )}
                       {payment.amount > 0 && (
                         <button
                           onClick={() => setViewingReceiptPayment({
@@ -418,6 +584,10 @@ export default function ResidentDashboard() {
           month: viewingReceiptPayment.month,
           year: viewingReceiptPayment.year,
           isLate: viewingReceiptPayment.isLate,
+          isForOtherMonth: viewingReceiptPayment.isForOtherMonth,
+          coveredMonths: viewingReceiptPayment.coveredMonths,
+          coveredYear: viewingReceiptPayment.coveredYear,
+          isAdvance: viewingReceiptPayment.isAdvance,
           receiptNumber: viewingReceiptPayment.receiptNumber,
           createdAt: viewingReceiptPayment.createdAt
         } : null}

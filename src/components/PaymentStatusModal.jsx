@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { updatePaymentStatus } from '../services/paymentService';
+import { updatePaymentStatus, approveAdvancePayment, rejectAdvancePayment } from '../services/paymentService';
 import { validateFile } from '../utils/fileValidation';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../config/firebase';
@@ -71,7 +71,16 @@ export default function PaymentStatusModal({ isOpen, onClose, payment, onUpdate 
         updateData.receiptUrl = receiptUrl;
       }
 
-      await updatePaymentStatus(payment.id, updateData);
+      // Los anticipos propagan el cambio a su placeholder simbólico:
+      // aprobar → aprueba ambos; rechazar → rechaza y elimina el placeholder
+      // para liberar el mes cubierto.
+      if (payment.isAdvance && status === 'approved') {
+        await approveAdvancePayment(payment.id, updateData);
+      } else if (payment.isAdvance && status === 'rejected') {
+        await rejectAdvancePayment(payment.id, updateData);
+      } else {
+        await updatePaymentStatus(payment.id, updateData);
+      }
 
       onUpdate();
       onClose();
@@ -139,6 +148,12 @@ export default function PaymentStatusModal({ isOpen, onClose, payment, onUpdate 
                 <option value="approved">Aprobado</option>
                 <option value="rejected">Rechazado</option>
               </select>
+              {payment.isAdvance && (
+                <p className="mt-1 text-xs text-gray-500">
+                  Pago anticipado: al aprobar se aprueba su cobertura simbólica del mes cubierto;
+                  al rechazar se elimina para que el residente pueda reintentarlo.
+                </p>
+              )}
             </div>
 
             <div>

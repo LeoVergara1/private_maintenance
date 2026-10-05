@@ -45,3 +45,31 @@ export const getMonthName = (month) => {
 export const getPaymentPeriodText = (month, year) => {
   return `${getMonthName(month)} ${year}`;
 };
+
+/** Días de anticipación antes de fin de mes para ofrecer el pago adelantado. */
+export const ADVANCE_WINDOW_DAYS = 5;
+
+/**
+ * Días que tiene un mes (maneja febrero/bisiestos).
+ */
+export const getDaysInMonth = (year, month) => {
+  return new Date(year, month, 0).getDate();
+};
+
+/**
+ * ¿Estamos en los últimos N días del mes? (ventana de pago anticipado)
+ */
+export const isWithinAdvanceWindow = (daysBefore = ADVANCE_WINDOW_DAYS) => {
+  const now = new Date();
+  const dim = getDaysInMonth(now.getFullYear(), now.getMonth() + 1);
+  return now.getDate() > dim - daysBefore;
+};
+
+/**
+ * Siguiente periodo (maneja diciembre → enero del año siguiente).
+ * @returns {{ month: number, year: number }}
+ */
+export const getNextPeriod = (month, year) => {
+  if (month === 12) return { month: 1, year: year + 1 };
+  return { month: month + 1, year };
+};

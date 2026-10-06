@@ -12,6 +12,7 @@ import {
 } from '../services/roleService';
 import { getAllUsers, updateUserHouse } from '../services/userService';
 import { TOTAL_HOUSES } from '../config/constants';
+import { exportUsersToExcel } from '../utils/excelExport';
 
 const EMPTY_FORM = { label: '', description: '', views: [] };
 
@@ -37,6 +38,7 @@ export default function RolesPage() {
   const [editingHouseId, setEditingHouseId] = useState(null);
   const [houseDraft, setHouseDraft] = useState('');
   const [savingHouseId, setSavingHouseId] = useState(null);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     loadAll();
@@ -259,6 +261,24 @@ export default function RolesPage() {
     );
   });
 
+  const handleExportUsers = async () => {
+    setExporting(true);
+    try {
+      const roleLabels = Object.fromEntries(roles.map((r) => [r.id, r.label || r.id]));
+      const result = exportUsersToExcel(filteredUsers, roleLabels, 'usuarios-privada.xlsx');
+      if (!result.success) {
+        setError('Error al exportar la lista de usuarios.');
+      } else {
+        flashSuccess(`Lista exportada (${filteredUsers.length} usuarios)`);
+      }
+    } catch (err) {
+      console.error('Error al exportar usuarios:', err);
+      setError('Error al exportar la lista de usuarios.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <DashboardLayout>
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -414,17 +434,29 @@ export default function RolesPage() {
         ) : (
           <div className="bg-white rounded-lg shadow-md">
             <div className="px-6 py-4 border-b border-gray-100">
-              <div className="relative">
-                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <input
-                  type="text"
-                  value={userSearch}
-                  onChange={(e) => setUserSearch(e.target.value)}
-                  placeholder="Buscar por nombre, correo o casa..."
-                  className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <input
+                    type="text"
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    placeholder="Buscar por nombre, correo o casa..."
+                    className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <button
+                  onClick={handleExportUsers}
+                  disabled={exporting || filteredUsers.length === 0}
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  {exporting ? 'Exportando...' : `Exportar Excel (${filteredUsers.length})`}
+                </button>
               </div>
               <p className="text-xs text-gray-400 mt-2">
                 Usa el lápiz junto a la casa para corregir registros erróneos. Las casas ocupadas aparecen deshabilitadas. Nota: los pagos históricos conservan la casa original.

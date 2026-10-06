@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modelo Multi-Tenant — SuperAdmin → Privadas → Casas → Usuarios</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; padding: 32px 16px; }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+  h1 { text-align: center; font-size: 22px; margin-bottom: 6px; }
+  .sub { text-align: center; color: #94a3b8; font-size: 13px; margin-bottom: 28px; }
+  .level { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 8px; }
+  .card { background: #1e293b; border: 1px solid #334155; border-radius: 14px; padding: 16px 20px; min-width: 240px; max-width: 330px; flex: 1; }
+  .card.super { border-color: #a855f7; box-shadow: 0 0 24px rgba(168,85,247,.25); text-align: center; max-width: 420px; }
+  .card.condo { border-color: #22c55e; }
+  .card.house { border-color: #3b82f6; }
+  .card.user { border-color: #f59e0b; }
+  .badge { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: 3px 10px; border-radius: 999px; margin-bottom: 8px; }
+  .b-super { background: #a855f7; color: #fff; }
+  .b-condo { background: #22c55e; color: #052e16; }
+  .b-house { background: #3b82f6; color: #fff; }
+  .b-user { background: #f59e0b; color: #451a03; }
+  .card h3 { font-size: 15px; margin-bottom: 6px; }
+  .card code { font-size: 12px; color: #7dd3fc; }
+  .card ul { margin: 8px 0 0 16px; font-size: 12.5px; color: #cbd5e1; line-height: 1.6; }
+  .arrow { text-align: center; font-size: 22px; color: #64748b; line-height: 1.2; margin: 4px 0; }
+  .arrow small { display: block; font-size: 11.5px; color: #94a3b8; }
+  .row-label { text-align: center; font-size: 12px; font-weight: 700; color: #64748b; letter-spacing: .08em; text-transform: uppercase; margin: 18px 0 10px; }
+  .flow { background: #1e293b; border: 1px dashed #475569; border-radius: 14px; padding: 18px 20px; margin-top: 26px; }
+  .flow h2 { font-size: 15px; margin-bottom: 12px; }
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+  .step { background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 12px; font-size: 12.5px; line-height: 1.55; }
+  .step b { display: block; margin-bottom: 4px; font-size: 13px; }
+  .s1 b { color: #a855f7; } .s2 b { color: #22c55e; } .s3 b { color: #3b82f6; } .s4 b { color: #f59e0b; }
+  .note { margin-top: 16px; font-size: 12px; color: #94a3b8; text-align: center; }
+  @media print { body { background: #fff; color: #111; } .card, .flow, .step { background: #fff; color: #111; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🏢 Modelo Multi-Tenant SaaS</h1>
+  <p class="sub">1 proyecto Firebase · 1 App · N privadas aisladas por <code>condoId</code> + Custom Claims</p>
+
+  <div class="row-label">Nivel 0 — Plataforma (tú)</div>
+  <div class="level">
+    <div class="card super">
+      <span class="badge b-super">SuperAdmin</span>
+      <h3>👑 Tú / Tu equipo</h3>
+      <code>claims: { superadmin: true }</code>
+      <ul>
+        <li>Ve <b>todas</b> las privadas (dashboard global MRR, churn)</li>
+        <li>Crea / suspende privadas por falta de pago</li>
+        <li>No pertenece a ninguna privada (sin <code>condoId</code>)</li>
+        <li>Se asigna 1 vez con Admin SDK</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="arrow">⬇ <small>crea / aprueba · 1 doc por cliente</small></div>
+
+  <div class="row-label">Nivel 1 — Condominio / Privada (el cliente que paga)</div>
+  <div class="level">
+    <div class="card condo">
+      <span class="badge b-condo">condominiums/{condoId}</span>
+      <h3>🏘️ Privada Las Lomas</h3>
+      <code>inviteCode: LOMAS-4X8K</code>
+      <ul>
+        <li><code>totalHouses: 60</code> · <code>baseAmount: $300</code></li>
+        <li><code>dueDay: 10</code> · <code>lateFee: $50</code></li>
+        <li><code>status: trial | active | suspended</code></li>
+        <li><code>plan: pro</code> → suscripción Stripe/MP</li>
+      </ul>
+    </div>
+    <div class="card condo">
+      <span class="badge b-condo">condominiums/{condoId}</span>
+      <h3>🏘️ Privada Los Pinos</h3>
+      <code>inviteCode: PINOS-9Q2Z</code>
+      <ul>
+        <li><code>totalHouses: 30</code> · <code>baseAmount: $500</code></li>
+        <li>Misma App, misma DB, datos aislados</li>
+        <li>Config 100% independiente</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="arrow">⬇ <small>contiene · N casas según <code>totalHouses</code></small></div>
+
+  <div class="row-label">Nivel 2 — Casa (unidad lógica, no es colección)</div>
+  <div class="level">
+    <div class="card house">
+      <span class="badge b-house">Casa</span>
+      <h3>🏠 Casa #15 — Las Lomas</h3>
+      <code>{ condoId: "lomas", houseNumber: 15 }</code>
+      <ul>
+        <li>Unicidad por <b>(condoId + houseNumber)</b></li>
+        <li>La casa #15 puede existir en Lomas <b>y</b> en Pinos sin chocar</li>
+        <li>Acumula: pagos, reservas, adeudos</li>
+      </ul>
+    </div>
+    <div class="card house">
+      <span class="badge b-house">Casa</span>
+      <h3>🏠 Casa #07 — Los Pinos</h3>
+      <code>{ condoId: "pinos", houseNumber: 7 }</code>
+      <ul>
+        <li>Sin usuario aún → el admin puede subir pago manual (<code>userId: null</code>)</li>
+        <li>Al registrarse, se auto-vincula</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="arrow">⬇ <small>habita · 1 usuario por casa (o más si lo permites)</small></div>
+
+  <div class="row-label">Nivel 3 — Usuario (quien usa la app)</div>
+  <div class="level">
+    <div class="card user">
+      <span class="badge b-user">admin</span>
+      <h3>👤 Admin de privada</h3>
+      <code>claims: { condoId, role: "admin" }</code>
+      <ul>
+        <li>Gestiona <b>solo su</b> privada</li>
+        <li>Aprueba pagos, invita, configura montos</li>
+      </ul>
+    </div>
+    <div class="card user">
+      <span class="badge b-user">resident</span>
+      <h3>👤 Residente</h3>
+      <code>claims: { condoId, role: "resident" }</code>
+      <ul>
+        <li>Ve y paga <b>solo su casa</b></li>
+        <li>Entra con <code>/join/CODIGO</code> + elige casa libre</li>
+      </ul>
+    </div>
+    <div class="card user">
+      <span class="badge b-user">gate_manager</span>
+      <h3>👤 Portón / Vigilancia</h3>
+      <code>claims: { condoId, role: "gate_manager" }</code>
+      <ul>
+        <li>Controles del portón + utilities de <b>su</b> privada</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="flow">
+    <h2>🔄 Flujo de punta a punta</h2>
+    <div class="steps">
+      <div class="step s1"><b>1. SuperAdmin (tú)</b>Monitoreas todas las privadas. Si una no paga su suscripción → <code>status: suspended</code> y las rules le bloquean el acceso automáticamente.</div>
+      <div class="step s2"><b>2. Se vende sola</b>Cliente entra a <code>/crear-privada</code> → paga → se crea el doc <code>condominiums</code> → Function le pone claims de admin. Tú no tocas consola.</div>
+      <div class="step s3"><b>3. Admin invita</b>Comparte <code>inviteCode</code> por WhatsApp. Vecino entra a <code>/join/LOMAS-4X8K</code>, login con Google, elige casa libre. Function valida unicidad (condoId+casa) y le da claims.</div>
+      <div class="step s4"><b>4. Operación diaria</b>Todas las queries llevan <code>where("condoId","==",claims.condoId)</code>. Las rules comparan <code>token.condoId == resource.data.condoId</code>. Imposible ver otra privada.</div>
+    </div>
+  </div>
+
+  <p class="note">Firestore plano con <code>condoId</code> en cada doc · Storage en <code>tenants/{condoId}/...</code> · Seguridad por Custom Claims (0 lecturas extra en rules)</p>
+</div>
+</body>
+</html>

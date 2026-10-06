@@ -43,6 +43,41 @@ export const exportPaymentsToExcel = (payments, filename = 'pagos.xlsx') => {
 };
 
 /**
+ * Export users to Excel file
+ * Columns: Casa, Nombre, Correo, Rol
+ */
+export const exportUsersToExcel = (users, roleLabels = {}, filename = 'usuarios.xlsx') => {
+  try {
+    const sorted = [...users].sort((a, b) => (a.houseNumber || 0) - (b.houseNumber || 0));
+    const excelData = sorted.map(user => ({
+      'Casa': user.houseNumber ?? 'N/A',
+      'Nombre': user.displayName || 'N/A',
+      'Correo': user.email || 'N/A',
+      'Rol': roleLabels[user.role] || user.role || 'N/A'
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+    worksheet['!cols'] = [
+      { wch: 10 },  // Casa
+      { wch: 30 },  // Nombre
+      { wch: 35 },  // Correo
+      { wch: 22 }   // Rol
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Usuarios');
+
+    XLSX.writeFile(workbook, filename);
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error al exportar usuarios a Excel:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
  * Get status text in Spanish
  */
 const getStatusText = (status) => {
